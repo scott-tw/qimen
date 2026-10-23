@@ -9,6 +9,7 @@
 ## 功能
 
 - **兩種盤**：占事盤（以提問當下的時間起盤，一次問一件事）、出生命盤（以出生時間起盤）。
+- **問事者年命**：選填生日，取出生年天干（以立春為界，甲年用旬首儀）找出代表本人的宮位，列為第一個用神，其他用神的「和你的關係」改以年命宮為準，讓同一時辰不同的人得到不同解讀。
 - **完整盤面**：八神、九星（含月令旺相休囚廢）、八門、天盤干、地盤干、旬首、空亡、驛馬、值符、值使。
 - **狀態標記**：門迫、宮迫、門入墓、擊刑、空亡、馬星，以及常見格局（青龍返首、飛鳥跌穴、大格、伏吟等）。
 - **問事類別與用神**：
@@ -61,6 +62,7 @@ src/
   test/
     known.js                       ← 印出三張已知盤
     t2.js                          ← 解讀模組測試
+    natal.js                       ← 年命測試
     compare.js                     ← 與 kinqimen 參考資料比對
     reference-kinqimen.json        ← 220 組參考盤
 ```
@@ -74,6 +76,7 @@ cd src
 node build.js              # 重新產生 ../index.html
 node test/compare.js       # 驗證排盤（預期 ok 218 bad 2）
 node test/t2.js            # 解讀模組測試（預期最後一行 all ok）
+node test/natal.js         # 年命測試（預期 natal all ok）
 ```
 
 修改解讀文字時，編輯 `src/interp.js` 裡的詞庫即可：`DOOR`、`GOD`、`STAR`、`FLAG`、`GE`、`ROLE`、`TYPEADV`。改完重新執行 `node build.js`。

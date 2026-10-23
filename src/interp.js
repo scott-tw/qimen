@@ -45,6 +45,7 @@ const REL={"比和":"和你本人五行相同，彼此合得來","生":"對你�
 /* ---------- 每種問事的用神：代表什麼、順/卡時怎麼說、建議 ---------- */
 // id: [代表什麼（白話）, 順的時候的建議, 卡的時候的建議]
 const ROLE={
+ natal:["你本人（依出生年）","你個人的狀態不錯，可以主動一點。","你個人目前比較吃力，先把自己顧好再行動。"],
  self:["你自己目前的狀態","你本身狀態不錯，可以主動一點。","你目前比較累或心裡有卡，先把自己狀態顧好再行動。"],
  matter:["這件事本身","這件事本身有機會成。","這件事本身有阻力，要有心理準備會拖延或需要調整做法。"],
  open:["機會與門路（職位、工作）","機會是開著的，可以積極去爭取。","機會還沒真正打開，先多方打聽，不要只押一個。"],
@@ -99,14 +100,19 @@ function findGod(ch,g){for(const p of QM.RING) if(ch.palaces[p].god===g) return 
 const stemP=(ch,s)=>ch.heavenOf(s)||ch.groundOf(s);
 function roles(ch,q){
  const R=(id,label,tech,p)=>({id,label,tech,p});
+ if(q.birthStem){const natal=R("natal","年命","年干"+q.birthStem,ch.groundOf(q.birthStem)); return [natal,...baseRoles(ch,q,natal.p)];}
+ return baseRoles(ch,q,null);
+}
+function baseRoles(ch,q,natalP){
+ const R=(id,label,tech,p)=>({id,label,tech,p});
  const self=R("self","本人","日干"+ch.dayStem,ch.dayP), matter=R("matter","這件事","時干"+ch.hourStem,ch.hourP);
  const horseP=({"寅":8,"申":2,"巳":4,"亥":6})[ch.horse];
  switch(q.type){
   case "career": return [self,matter,R("open","開門","職位",findDoor(ch,"開")),R("zhifu","值符","決策者",ch.zhifuP),R("liuhe","六合","合約",findGod(ch,"六合"))];
   case "wealth": return [self,matter,R("sheng","生門","財源",findDoor(ch,"生")),R("capital","戊","資本",stemP(ch,"戊"))];
-  case "health": {const t=q.target; const pp=t==="self"?ch.dayP:t==="oldman"?6:t==="oldwoman"?2:ch.hourP;
+  case "health": {const t=q.target; const pp=t==="self"?(natalP||ch.dayP):t==="oldman"?6:t==="oldwoman"?2:ch.hourP;
     const pl=t==="self"?"病人（本人）":t==="oldman"?"病人（男性長輩）":t==="oldwoman"?"病人（女性長輩）":"病人";
-    return [R("patient",pl,t==="oldman"?"乾宮":t==="oldwoman"?"坤宮":t==="self"?"日干":"時干",pp),R("ill","天芮","病星",findStar(ch,"天芮")),R("doctor","天心","醫星",findStar(ch,"天心")),R("recover","生門","生機",findDoor(ch,"生")),R("caution","死門","",findDoor(ch,"死"))];}
+    return [R("patient",pl,t==="oldman"?"乾宮":t==="oldwoman"?"坤宮":t==="self"?(natalP?"年干"+q.birthStem:"日干"):"時干",pp),R("ill","天芮","病星",findStar(ch,"天芮")),R("doctor","天心","醫星",findStar(ch,"天心")),R("recover","生門","生機",findDoor(ch,"生")),R("caution","死門","",findDoor(ch,"死"))];}
   case "love": {const o=q.gender==="female"?"庚":"乙"; return [self,R("other","對方","天盤"+o,stemP(ch,o)),R("bond","六合","緣分",findGod(ch,"六合"))];}
   case "travel": return [self,R("go","開門","出行",findDoor(ch,"開")),R("rest","休門","平安",findDoor(ch,"休")),R("gain","生門","收穫",findDoor(ch,"生")),R("move","馬星","變動",horseP)];
   case "study": return [self,R("studyprep","天輔","學業",findStar(ch,"天輔")),R("exam","景門","考試",findDoor(ch,"景")),R("luck","丁","文星",stemP(ch,"丁"))];
@@ -161,14 +167,15 @@ function interpret(ch,q){
  const fuyin=QM.RING.every(p=>ch.palaces[p].ge.some(g=>g.t==="伏吟"));
  const solo=["ill","caution","opp"]; const raw=[];
  for(const r of raw0){const g=!solo.includes(r.id)&&raw.find(x=>x.p===r.p&&!solo.includes(x.id)); if(g){g.ids.push(r.id);g.labels.push(r.label);} else raw.push({...r,ids:[r.id],labels:[r.label]});}
- const items=[]; const selfEl=QM.PEL[ch.dayP];
+ const natalP=q.birthStem?ch.groundOf(q.birthStem):null, baseP=natalP||ch.dayP;
+ const items=[]; const selfEl=QM.PEL[baseP];
  for(const r of raw){
    const P=ch.palaces[r.p], infos=r.ids.map(id=>ROLE[id]);
    let e;
    if(r.p===5||!P.door) e={pros:[],cons:[],score:0};
    else if(r.id==="ill") e=illnessReasons(ch,P);
    else e=reasonsFor(ch,P,{horseGood:r.ids.includes("move"),skipFuyin:fuyin});
-   if(q.type!=="health"&&!r.ids.some(x=>["self","nature"].includes(x))&&r.p!==ch.dayP&&r.p!==5){
+   if(q.type!=="health"&&!r.ids.some(x=>["natal","self","nature"].includes(x))&&r.p!==baseP&&r.p!==5){
      const rel=QM.rel(QM.PEL[r.p],selfEl); const t=`和你的關係：${REL[rel]}（宮位五行）`;
      (rel==="生"||rel==="比和"?e.pros:e.cons).push(t);
    }
@@ -178,7 +185,7 @@ function interpret(ch,q){
    if(r.id==="caution"){ v="warn"; verdict=e.cons.length?"這裡是比較需要小心的地方，多留意下面提到的狀況即可，不必過度擔心。":"這一宮沒有特別凶的訊號，不必擔心。"; }
    else if(r.id==="opp"){ v=e.score>=1.5?"bad":e.score>=-0.5?"warn":"good"; verdict=v==="bad"?"對方條件不差、有人支持，"+ROLE.opp[2]:v==="good"?"對方本身也有不少困難，"+ROLE.opp[1]:"對方有優勢也有弱點，雙方各有籌碼。"; }
    else verdict=infos.map(info=>v==="good"?info[1]:v==="bad"?info[2]:info[1].replace(/。$/,"")+"，但也有要注意的地方。").join("");
-   items.push({...r,label:r.labels.join("・"),meaning:infos.map(i=>i[0]).join("、"),palace:P,verdict,tone:v,pros:e.pros,cons:e.cons,body:e.body,score:e.score,
+   items.push({...r,label:r.labels.join("・"),meaning:r.ids.map((id,k)=>natalP&&id==="self"?"今天的你（日干）":infos[k][0]).join("、"),palace:P,verdict,tone:v,pros:e.pros,cons:e.cons,body:e.body,score:e.score,
      head:`${P.name}（${P.dir}）・${P.god||""}・${P.stars.join("、")}・${P.door?P.door+"門":""}・天盤${P.heaven.join("")} 地盤${P.ground}`});
  }
  const scored=items.filter(i=>i.id!=="caution"&&i.id!=="opp"); const avg=scored.reduce((a,b)=>a+(b.id==="opp"?-b.score:b.score),0)/Math.max(1,scored.length);
@@ -193,6 +200,8 @@ function interpret(ch,q){
  const best=ranked.find(i=>i.pros.length&&i.tone!=="bad"), worst=[...ranked].reverse().find(i=>i.cons.length&&i.tone!=="good");
  const clean=s=>s.replace(/（[^）]*）$/,"");
  let summary=q.type==="natal"?"這張是出生命盤，看的是個性與一生的傾向。":`整體來看，${tendency}。`;
+ const natal=natalP?{stem:q.birthStem,yearGZ:q.birthGZ||"",p:natalP}:null;
+ if(natal){const NP=ch.palaces[natalP]; summary=`你的年命（${natal.yearGZ?natal.yearGZ+"年，":""}${natal.stem}）落在${NP.name}（${NP.dir}），`+summary;}
  if(best) summary+=`最有利的是「${best.meaning}」：${clean(best.pros[0])}。`;
  if(worst&&worst!==best) summary+=`最需要注意的是「${worst.meaning}」：${clean(worst.cons[0])}。`;
  if(fuyin&&q.type!=="natal") summary+="另外，這張是「伏吟盤」，九星都停在原位，傳統上代表事情偏向原地踏步，適合守、不適合大動作。";
@@ -202,7 +211,7 @@ function interpret(ch,q){
  const kong=nextDates(ch,[...ch.kong]), horse=nextDates(ch,[ch.horse]); const timing=[];
  if(kong.length) timing.push(`${kong.map(o=>o.date).join("、")}（${kong.map(o=>o.gz+"日").join("、")}）：盤上「還沒落實」的部分，傳統上在這幾天比較容易有消息或定案。`);
  if(horse.length) timing.push(`${horse.map(o=>o.date).join("、")}（${horse.map(o=>o.gz+"日").join("、")}）前後：比較容易出現變動或新的安排。`);
- return {type:q.type,typeName:TYPES[q.type].name,items,avg,tendency,tone,summary,good:[...new Set(good)],bad:[...new Set(bad)],timing};
+ return {type:q.type,typeName:TYPES[q.type].name,natal,items,avg,tendency,tone,summary,good:[...new Set(good)],bad:[...new Set(bad)],timing};
 }
 function chartLine(ch){return `${ch.input.y}/${ch.input.m}/${ch.input.d} ${String(ch.input.h).padStart(2,"0")}:${String(ch.input.mi).padStart(2,"0")}｜${ch.dayGZ}日 ${ch.hourGZ}時｜${ch.term}${ch.yuan}元 ${ch.yin?"陰":"陽"}遁${"一二三四五六七八九"[ch.ju-1]}局`;}
 function fullText(ch,R,title){
@@ -217,7 +226,7 @@ function fullText(ch,R,title){
 }
 function friendText(ch,R,title){
  const soften=s=>s.replace(/（[^）]*）$/,"");
- const L=[`【${title||"奇門盤簡要說明"}】`,`（${ch.input.y}/${ch.input.m}/${ch.input.d} ${String(ch.input.h).padStart(2,"0")}:${String(ch.input.mi).padStart(2,"0")} 起盤，傳統術數參考）`,"",R.summary,""];
+ const L=[`【${title||"奇門盤簡要說明"}】`,`（${ch.input.y}/${ch.input.m}/${ch.input.d} ${String(ch.input.h).padStart(2,"0")}:${String(ch.input.mi).padStart(2,"0")} 起盤，傳統術數參考）${R.natal?"（已依問事者出生年個人化）":""}`,"",R.summary,""];
  R.items.filter(i=>i.id!=="caution"&&i.id!=="opp").forEach(i=>L.push(`・${i.meaning}：${{good:"順",warn:"普通",bad:"較吃力"}[i.tone]}，${i.verdict}`));
  if(R.timing.length) L.push("","時間參考：",...R.timing.map(x=>"・"+x));
  L.push("",R.type==="health"?"以上不能取代醫師的診斷與建議，請以醫療團隊的判斷為準。祝早日康復。":"以上僅供參考，實際決定請以現實條件與專業意見為準。");

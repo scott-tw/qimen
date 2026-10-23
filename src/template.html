@@ -164,11 +164,13 @@ textarea.out{min-height:200px;font-size:13px;line-height:1.55;white-space:pre-wr
       <label for="title">標題（給自己看的名稱）<input id="title" placeholder="例：問換工作"></label>
       <label for="date">日期<input id="date" type="date" required></label>
       <label for="time">時間（台灣時間）<input id="time" type="time" required></label>
+      <label for="birth">問事者生日（選填，用來個人化解讀）<input id="birth" type="date" aria-describedby="birthNote"></label>
       <label for="qtype" id="qtypeWrap">問事類別<select id="qtype"></select></label>
       <label for="target" id="targetWrap" hidden>病人是誰
         <select id="target"><option value="self">本人</option><option value="oldman">男性長輩（父親等）</option><option value="oldwoman">女性長輩（母親等）</option><option value="other">其他人</option></select></label>
       <label for="gender" id="genderWrap" hidden>問者性別
         <select id="gender"><option value="male">男</option><option value="female">女</option></select></label>
+      <p class="note" id="birthNote" style="grid-column:1/-1;margin:-4px 0 0">問事者生日：填了之後，盤上會標出代表你的宮位（年命），解讀會依你個人調整。只存在你的瀏覽器裡。</p>
       <div class="btns" style="grid-column:1/-1">
         <button type="submit" class="primary">起盤</button>
         <button type="button" id="nowBtn">用現在時間起盤</button>
@@ -248,12 +250,15 @@ function render(state){
   const [y,m,d]=state.date.split("-").map(Number), [h,mi]=state.time.split(":").map(Number);
   let ch; try{ch=QM.chart(y,m,d,h,mi,{zi:state.zi})}catch(e){$("err").textContent=e.message;$("err").hidden=false;return}
   $("err").hidden=true;
-  const q={type:state.mode==="n"?"natal":state.qtype,target:state.target,gender:state.gender};
+  if(state.mode==="n"&&!state.birth){state.birth=state.date;$("birth").value=state.date}
+  let nat=null; if(state.birth){const [by,bm,bd]=state.birth.split("-").map(Number); try{nat=QM.natalStem(by,bm,bd)}catch(e){$("err").textContent="生日："+e.message;$("err").hidden=false;return}}
+  const q={type:state.mode==="n"?"natal":state.qtype,target:state.target,gender:state.gender,birthStem:nat?nat.stem:"",birthGZ:nat?nat.yearGZ:""};
   const R=QI.interpret(ch,q); cur={state,ch,R};
   $("chartTitle").textContent=state.title||(state.mode==="n"?"出生命盤":"占事盤");
   const chips=[[`${ch.dayGZ}日 ${ch.hourGZ}時`],[`${ch.term}（${ch.termTime}交）・${ch.yuan}元`],[`${ch.yin?"陰":"陽"}遁${"一二三四五六七八九"[ch.ju-1]}局`,"info"],[`旬首 ${ch.xunHead}`],[`空亡 ${ch.kong}`,"warn"],[`驛馬 ${ch.horse}`],[`值符 ${ch.zhifuStar}`],[`值使 ${ch.zhishiDoor}門`],[`月令 ${ch.monthBranch}（${ch.season}旺）`]];
+  if(nat) chips.push([`年命 ${nat.yearGZ}年・${nat.stem}`,"info"]);
   $("meta").innerHTML=`<span class="chip"><b>${y}/${m}/${d} ${pad(h)}:${pad(mi)}</b></span>`+chips.map(([t,k])=>`<span class="chip ${k||""}">${t}</span>`).join("");
-  const hit={}; R.items.forEach(i=>{(hit[i.p]=hit[i.p]||[]).push(i.label)});
+  const hit={}; R.items.forEach(i=>{(hit[i.p]=hit[i.p]||[]).push(...i.labels)});
   const order=[4,9,2,3,5,7,8,1,6]; let html="";
   for(const p of order){const P=ch.palaces[p];
     if(p===5){html+=`<div class="cell center"><div class="hd" style="justify-content:center">中五</div><div class="stems"><span class="e-${EL[P.ground]}">${P.ground}</span></div><div class="note">地盤（寄坤二）</div></div>`;continue}
@@ -280,8 +285,8 @@ function render(state){
   $("timing").innerHTML=R.timing.map(g=>`<li>${esc(g)}</li>`).join("");
   $("out").value=QI.friendText(ch,R,state.title);
 }
-function readState(){return{mode,title:$("title").value.trim(),date:$("date").value,time:$("time").value,qtype:$("qtype").value,target:$("target").value,gender:$("gender").value,zi:$("zi").value}}
-function applyState(s){setMode(s.mode||"q");$("title").value=s.title||"";$("date").value=s.date;$("time").value=s.time;$("qtype").value=s.qtype||"general";$("target").value=s.target||"self";$("gender").value=s.gender||"male";$("zi").value=s.zi||"next";syncOpts()}
+function readState(){return{mode,title:$("title").value.trim(),date:$("date").value,time:$("time").value,birth:$("birth").value,qtype:$("qtype").value,target:$("target").value,gender:$("gender").value,zi:$("zi").value}}
+function applyState(s){setMode(s.mode||"q");$("title").value=s.title||"";$("date").value=s.date;$("time").value=s.time;$("birth").value=s.birth||"";$("qtype").value=s.qtype||"general";$("target").value=s.target||"self";$("gender").value=s.gender||"male";$("zi").value=s.zi||"next";syncOpts()}
 $("f").addEventListener("submit",e=>{e.preventDefault();render(readState())});
 $("nowBtn").onclick=()=>{setNow();render(readState())};
 async function copy(t){$("out").value=t;try{await navigator.clipboard.writeText(t);toast("已複製")}catch(e){const o=$("out");o.focus();o.select();toast("請長按或按 Ctrl+C 複製")}}

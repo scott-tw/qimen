@@ -101,6 +101,14 @@ function chart(y,m,d,h,mi,opt){
     fuTou:`${fy}/${fm}/${fd}`, groundOf:s=>r5(inv[s]),
     heavenOf:s=>{for(const k of RING){if(P[k].heaven.includes(s))return k;}return null;}};
 }
-const api={chart,setTerms,rel,SHENG,KE,PEL,DEL,SEL,STEL,PNAME,PDIR,RING};
+// 年命：出生年以立春為界；甲年用旬首儀
+function natalStem(by,bm,bd){
+  if(!TERMS||!TERMS[by]) throw new Error("年份需介於 1901–2100");
+  const t=Math.round((Date.UTC(by,bm-1,bd)-Date.UTC(by,0,1))/60000);
+  const Y=t<TERMS[by][2]?by-1:by;
+  const yi=((Y-4)%60+60)%60, g=G[yi%10];
+  return {yearGZ:gz(yi),stem:g==="甲"?XUNSTEM[yi-yi%10]:g};
+}
+const api={chart,natalStem,setTerms,rel,SHENG,KE,PEL,DEL,SEL,STEL,PNAME,PDIR,RING};
 if(typeof module!=="undefined") module.exports=api; else root.QM=api;
 })(this);
