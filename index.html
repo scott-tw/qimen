@@ -1,0 +1,631 @@
+<title>九宮問事</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap">
+<style>
+/* Layout: 上方起盤表單，中間九宮盤（南在上，傳統方位），下方解讀與分享；寬螢幕時盤與解讀並排 */
+:root{
+  --bg:#eef0ec; --surface:#fafbf8; --sunk:#e3e7e1; --ink:#1a2125; --muted:#5b676c; --line:#cfd6cf;
+  --accent:#23675d; --accent-ink:#ffffff; --accent-soft:#d6e8e3;
+  --good:#2f7a3d; --warn:#9a6a00; --bad:#b03a2e; --info:#2f5f9a;
+  --wood:#2f7d3f; --fire:#c0392b; --earth:#94612a; --metal:#9c7a00; --water:#2a62a8;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111518; --surface:#192024; --sunk:#0d1113; --ink:#e4e9e6; --muted:#97a3a6; --line:#2b3539;
+  --accent:#5db3a3; --accent-ink:#0d1a17; --accent-soft:#1d3632;
+  --good:#6cc27c; --warn:#e2b33f; --bad:#f07a6b; --info:#7fb0ec;
+  --wood:#6cc27c; --fire:#f07a6b; --earth:#d7a463; --metal:#e6c344; --water:#72a8ec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111518; --surface:#192024; --sunk:#0d1113; --ink:#e4e9e6; --muted:#97a3a6; --line:#2b3539;
+  --accent:#5db3a3; --accent-ink:#0d1a17; --accent-soft:#1d3632;
+  --good:#6cc27c; --warn:#e2b33f; --bad:#f07a6b; --info:#7fb0ec;
+  --wood:#6cc27c; --fire:#f07a6b; --earth:#d7a463; --metal:#e6c344; --water:#72a8ec; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-family:var(--serif);font-weight:900;font-size:30px;margin:0;letter-spacing:.06em}
+h1 small{display:block;font-family:var(--sans);font-size:13px;font-weight:400;color:var(--muted);letter-spacing:.02em}
+h2{font-family:var(--serif);font-size:19px;margin:0 0 10px;text-wrap:balance}
+h3{font-size:15px;margin:0 0 6px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+button:hover{filter:brightness(1.05)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);font-weight:700}
+details.adv summary{cursor:pointer;color:var(--muted);font-size:13px}
+.main{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:16px}
+@media (min-width:980px){.main{grid-template-columns:minmax(0,560px) minmax(0,1fr)}}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--ink);white-space:nowrap}
+.chip b{font-weight:700}
+.chip.good{color:var(--good)} .chip.bad{color:var(--bad)} .chip.warn{color:var(--warn)} .chip.info{color:var(--info)}
+.board{position:relative;padding:22px 22px}
+.dirlab{position:absolute;font-size:12px;color:var(--muted);font-family:var(--serif)}
+.dirlab.n{bottom:2px;left:50%;transform:translateX(-50%)} .dirlab.s{top:2px;left:50%;transform:translateX(-50%)}
+.dirlab.e{left:2px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl} .dirlab.w{right:2px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl}
+.grid9{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.cell{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 8px 8px;min-height:150px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cell.center{background:var(--sunk);align-items:center;justify-content:center;text-align:center}
+.cell.hit{border:2px solid var(--accent);padding:6px 7px 7px}
+.cell .hd{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);gap:4px}
+.cell .row{display:flex;justify-content:space-between;align-items:baseline;gap:4px;font-family:var(--serif)}
+.cell .god{font-size:14px;font-weight:700}
+.cell .star{font-size:13.5px;text-align:right}
+.cell .star small{font-size:10.5px;color:var(--muted);margin-left:2px}
+.cell .mid{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:2px 0}
+.stems{display:flex;flex-direction:column;font-family:var(--serif);font-size:17px;line-height:1.15}
+.stems .g{opacity:.9}
+.door{font-family:var(--serif);font-weight:900;font-size:34px;line-height:1}
+.flags{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto}
+.flags .chip{font-size:10.5px;padding:0 6px}
+.tags{display:flex;flex-wrap:wrap;gap:3px}
+.tag{font-size:10.5px;padding:0 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700}
+.badge{position:absolute;top:-9px;right:8px;font-size:10.5px;padding:0 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.e-木{color:var(--wood)} .e-火{color:var(--fire)} .e-土{color:var(--earth)} .e-金{color:var(--metal)} .e-水{color:var(--water)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.tend{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--r);background:var(--sunk);margin-bottom:12px}
+.tend .lbl{font-size:12px;color:var(--muted)}
+.tend .val{font-family:var(--serif);font-size:20px;font-weight:700}
+.tend.good .val{color:var(--good)} .tend.warn .val{color:var(--warn)} .tend.bad .val{color:var(--bad)} .tend.info .val{color:var(--info)}
+.items{display:grid;gap:10px}
+.item{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;background:var(--surface)}
+.item .ih{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.item .ih b{font-family:var(--serif);font-size:16px}
+.item .ih span{font-size:12.5px;color:var(--muted)}
+.item ul{margin:2px 0 0;padding-left:18px}
+.item .verdict{margin:4px 0;font-weight:500}
+.item .vtag{font-size:12px;padding:0 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.item.v-good .vtag{color:var(--good)} .item.v-bad .vtag{color:var(--bad)} .item.v-warn .vtag{color:var(--warn)}
+.item.v-good{border-left:4px solid var(--good)} .item.v-warn{border-left:4px solid var(--warn)} .item.v-bad{border-left:4px solid var(--bad)}
+.why{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;margin-top:6px;align-items:start}
+.wl{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sunk);margin-top:2px}
+.wl.good{color:var(--good)} .wl.bad{color:var(--bad)}
+.vbox{margin:8px 0 0;padding:8px 10px;background:var(--accent-soft);border-radius:8px}
+.tech{margin-top:6px} .tech summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+.tend .sum{margin:6px 0 0;font-size:14.5px;max-width:68ch}
+.item li{margin:1px 0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+.cols ul{margin:4px 0 0;padding-left:18px}
+.box{border-radius:var(--r);padding:10px 12px;background:var(--sunk)}
+.box.good h3{color:var(--good)} .box.bad h3{color:var(--bad)}
+.note{font-size:12.5px;color:var(--muted)}
+.disc{margin-top:14px;padding:10px 12px;border-left:3px solid var(--warn);background:var(--sunk);font-size:13px;border-radius:0 8px 8px 0}
+.hist{display:grid;gap:6px;margin-top:8px}
+.hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);flex-wrap:wrap}
+.hrow .t{min-width:0;flex:1}
+.hrow .t b{display:block;font-size:14px;overflow-wrap:anywhere}
+.hrow .t span{font-size:12px;color:var(--muted)}
+textarea.out{min-height:200px;font-size:13px;line-height:1.55;white-space:pre-wrap;margin-top:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:20}
+.about{font-size:14px}
+.about p{margin:6px 0;max-width:68ch}
+.about table{border-collapse:collapse;font-size:13px;margin-top:6px}
+.about td,.about th{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+.tblwrap{overflow-x:auto}
+.err{color:var(--bad);font-size:14px}
+@media (max-width:520px){
+  .board{padding:18px 15px}
+  .dirlab.e{left:0}.dirlab.w{right:0}
+  .cell{min-height:132px;padding:5px 5px 6px}
+  .cell.hit{padding:4px 4px 5px}
+  .door{font-size:26px}
+  .stems{font-size:14px}
+  .cell .god{font-size:12.5px}
+  .cell .star{font-size:11.5px}
+  .cell .hd{font-size:10.5px}
+  h1{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>九宮問事<small>奇門遁甲排盤・白話解讀｜時家奇門・轉盤・拆補法</small></h1>
+    <div class="btns"><button id="aboutBtn" aria-expanded="false" aria-controls="about">使用說明</button></div>
+  </header>
+
+  <section class="panel about" id="about" hidden>
+    <h2>怎麼用</h2>
+    <p><b>占事盤</b>：心裡有一件具體的事想問時，用「提問當下」的時間起盤，一次只問一件事。例如「明年退休後到私校任教務主任，是否適合？」</p>
+    <p><b>出生命盤</b>：用出生的年月日時起盤，看性格與一生傾向。</p>
+    <p>時間請以<b>台灣時間</b>輸入。23:00 之後的子時預設算作隔天（可在「進階」更改）。</p>
+    <h3 style="margin-top:10px">盤上符號</h3>
+    <div class="tblwrap"><table>
+      <tr><th>層次</th><th>內容</th></tr>
+      <tr><td>神（左上）</td><td>值符、騰蛇、太陰、六合、白虎（陽遁為勾陳）、玄武（陽遁為朱雀）、九地、九天</td></tr>
+      <tr><td>星（右上）</td><td>九星，括號內為月令強弱：旺、相、休、囚、廢</td></tr>
+      <tr><td>門（大字）</td><td>休、生、傷、杜、景、死、驚、開</td></tr>
+      <tr><td>干（左側）</td><td>上為天盤干、下為地盤干</td></tr>
+      <tr><td>標記</td><td>門迫（門剋宮）、宮迫（宮剋門）、入墓、擊刑、空亡、馬星、吉凶格</td></tr>
+    </table></div>
+    <p class="note">排法：時家奇門轉盤，拆補法定局（以起盤當下所在節氣定陰陽遁與局數，節氣精確到分鐘；以符頭地支定上中下元）。排盤結果已與獨立的開源排盤程式交叉比對 220 組隨機時間，一致。月令強弱採季節五行，四季月於「立」節前 18 天為土旺。不同流派在定局、寄宮與用神取法上會有差異。</p>
+  </section>
+
+  <section class="panel" style="margin-top:12px">
+    <form id="f" class="form" autocomplete="off">
+      <label style="grid-column:1/-1">盤的用途
+        <span class="seg" role="group" aria-label="盤的用途">
+          <button type="button" id="modeQ" aria-pressed="true">占事盤（問一件事）</button>
+          <button type="button" id="modeN" aria-pressed="false">出生命盤</button>
+        </span>
+      </label>
+      <label for="title">標題（給自己看的名稱）<input id="title" placeholder="例：問退休後轉職"></label>
+      <label for="date">日期<input id="date" type="date" required></label>
+      <label for="time">時間（台灣時間）<input id="time" type="time" required></label>
+      <label for="qtype" id="qtypeWrap">問事類別<select id="qtype"></select></label>
+      <label for="target" id="targetWrap" hidden>病人是誰
+        <select id="target"><option value="self">本人</option><option value="oldman">男性長輩（父親等）</option><option value="oldwoman">女性長輩（母親等）</option><option value="other">其他人</option></select></label>
+      <label for="gender" id="genderWrap" hidden>問者性別
+        <select id="gender"><option value="male">男</option><option value="female">女</option></select></label>
+      <div class="btns" style="grid-column:1/-1">
+        <button type="submit" class="primary">起盤</button>
+        <button type="button" id="nowBtn">用現在時間起盤</button>
+        <details class="adv"><summary>進階</summary>
+          <label for="zi" style="margin-top:6px">23:00–24:00 的子時
+            <select id="zi"><option value="next">算作隔天（預設）</option><option value="same">算作當天</option></select></label>
+        </details>
+      </div>
+    </form>
+    <p id="err" class="err" hidden></p>
+  </section>
+
+  <div class="main">
+    <section class="panel">
+      <h2 id="chartTitle">盤面</h2>
+      <div class="meta" id="meta"></div>
+      <div class="board">
+        <span class="dirlab s">南</span><span class="dirlab n">北</span><span class="dirlab e">東</span><span class="dirlab w">西</span>
+        <div class="grid9" id="grid"></div>
+      </div>
+      <div class="legend">
+        <span class="e-木">● 木</span><span class="e-火">● 火</span><span class="e-土">● 土</span><span class="e-金">● 金</span><span class="e-水">● 水</span>
+        <span>框線：本次問事的用神宮位</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>解讀</h2>
+      <div id="tend" class="tend"></div>
+      <div class="items" id="items"></div>
+      <div class="cols">
+        <div class="box good"><h3>順的地方（全部整理）</h3><ul id="good"></ul></div>
+        <div class="box bad"><h3>要留意的地方（全部整理）</h3><ul id="bad"></ul></div>
+      </div>
+      <div class="box" style="margin-top:10px"><h3>時間參考（傳統應期）</h3><ul id="timing" style="margin:4px 0 0;padding-left:18px"></ul></div>
+      <div class="disc">奇門遁甲屬傳統術數，沒有科學證據支持其預測力。解讀僅供參考，不能取代醫療、法律、財務等專業判斷。</div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>分享與紀錄</h2>
+    <div class="btns">
+      <button type="button" id="copyFriend" class="primary">複製給親友的簡易說明</button>
+      <button type="button" id="copyFull">複製完整解讀</button>
+      <button type="button" id="saveBtn">存到我的紀錄</button>
+    </div>
+    <p class="note">親友版會淡化凶神凶門等字眼，只保留整體傾向與時間參考。要分享盤面，可直接截圖。</p>
+    <textarea id="out" class="out" aria-label="說明文字" readonly></textarea>
+    <h3 style="margin-top:14px">我的紀錄 <span class="note">（只存在這台裝置的瀏覽器裡）</span></h3>
+    <div class="hist" id="hist"></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>(function(root){
+const G="甲乙丙丁戊己庚辛壬癸", Z="子丑寅卯辰巳午未申酉戌亥";
+const RING=[1,8,3,4,9,2,7,6];
+const STAR={1:"天蓬",8:"天任",3:"天沖",4:"天輔",9:"天英",2:"天芮",7:"天柱",6:"天心"};
+const DOOR={1:"休",8:"生",3:"傷",4:"杜",9:"景",2:"死",7:"驚",6:"開"};
+const PNAME={1:"坎一",2:"坤二",3:"震三",4:"巽四",5:"中五",6:"乾六",7:"兌七",8:"艮八",9:"離九"};
+const PDIR={1:"北",2:"西南",3:"東",4:"東南",5:"中",6:"西北",7:"西",8:"東北",9:"南"};
+const PEL={1:"水",2:"土",3:"木",4:"木",5:"土",6:"金",7:"金",8:"土",9:"火"};
+const DEL={"休":"水","生":"土","傷":"木","杜":"木","景":"火","死":"土","驚":"金","開":"金"};
+const SEL={"天蓬":"水","天任":"土","天沖":"木","天輔":"木","天英":"火","天芮":"土","天禽":"土","天柱":"金","天心":"金"};
+const STEL={"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土","庚":"金","辛":"金","壬":"水","癸":"水"};
+const TERMN=["小寒","大寒","立春","雨水","驚蟄","春分","清明","穀雨","立夏","小滿","芒種","夏至","小暑","大暑","立秋","處暑","白露","秋分","寒露","霜降","立冬","小雪","大雪","冬至"];
+// [陰?, 上,中,下]
+const JU=[[0,2,8,5],[0,3,9,6],[0,8,5,2],[0,9,6,3],[0,1,7,4],[0,3,9,6],[0,4,1,7],[0,5,2,8],[0,4,1,7],[0,5,2,8],[0,6,3,9],
+ [1,9,3,6],[1,8,2,5],[1,7,1,4],[1,2,5,8],[1,1,4,7],[1,9,3,6],[1,7,1,4],[1,6,9,3],[1,5,8,2],[1,6,9,3],[1,5,8,2],[1,4,7,1],[0,1,7,4]];
+let TERMS=null;
+function setTerms(str){TERMS={};str.split(',').forEach((r,i)=>{const a=[];for(let k=0;k<24;k++)a.push(parseInt(r.substr(k*4,4),36));TERMS[1901+i]=a;});}
+function termDate(y,k){const t=new Date(Date.UTC(y,0,1)+TERMS[y][k]*60000);return `${t.getUTCMonth()+1}/${t.getUTCDate()} ${String(t.getUTCHours()).padStart(2,"0")}:${String(t.getUTCMinutes()).padStart(2,"0")}`;}
+const SHENG={"木":"火","火":"土","土":"金","金":"水","水":"木"};
+const KE={"木":"土","土":"水","水":"火","火":"金","金":"木"};
+function rel(a,b){ if(a===b)return"比和"; if(SHENG[a]===b)return"生"; if(SHENG[b]===a)return"被生"; if(KE[a]===b)return"剋"; return"被剋"; }
+function doy(y,m,d){return Math.round((Date.UTC(y,m-1,d)-Date.UTC(y,0,1))/864e5)+1;}
+function addDays(y,m,d,n){const t=new Date(Date.UTC(y,m-1,d)+n*864e5);return [t.getUTCFullYear(),t.getUTCMonth()+1,t.getUTCDate()];}
+function dayIdx(y,m,d){const n=Math.round((Date.UTC(y,m-1,d)-Date.UTC(1900,0,1))/864e5);return ((n+10)%60+60)%60;}
+function termAt(y,m,d,h,mi){ // latest term whose exact time <= given moment
+  const r=TERMS[y]; if(!r||!TERMS[y-1]) throw new Error("年份需介於 1902–2100");
+  const t=Math.round((Date.UTC(y,m-1,d,h||0,mi||0)-Date.UTC(y,0,1))/60000); let idx=-1;
+  for(let k=0;k<24;k++) if(r[k]<=t) idx=k;
+  if(idx<0) return {idx:23,year:y-1};
+  return {idx,year:y};
+}
+const gz=i=>G[i%10]+Z[i%12];
+const nxt=(p,yin)=>yin?((p+7)%9)+1:(p%9)+1;
+const r5=p=>p===5?2:p;
+const SEASON_BY_BRANCH={2:"木",3:"木",5:"火",6:"火",8:"金",9:"金",11:"水",0:"水",1:"土",4:"土",7:"土",10:"土"};
+// month branch from 節 (even term indices: 小寒=丑...)
+function monthBranch(y,m,d,h,mi){const t=termAt(y,m,d,h,mi);let k=t.idx; if(k%2===1)k-=1; return (Math.floor(k/2)+1)%12;}
+function wangState(el,season){ if(el===season)return"旺"; if(SHENG[season]===el)return"相"; if(SHENG[el]===season)return"休"; if(KE[el]===season)return"囚"; return"廢"; }
+const KONG={0:"戌亥",10:"申酉",20:"午未",30:"辰巳",40:"寅卯",50:"子丑"};
+const XUNSTEM={0:"戊",10:"己",20:"庚",30:"辛",40:"壬",50:"癸"};
+const BR_PAL={"子":1,"丑":8,"寅":8,"卯":3,"辰":4,"巳":4,"午":9,"未":2,"申":2,"酉":7,"戌":6,"亥":6};
+const HORSE={"申":"寅","子":"寅","辰":"寅","寅":"申","午":"申","戌":"申","亥":"巳","卯":"巳","未":"巳","巳":"亥","酉":"亥","丑":"亥"};
+const TOMB={"水":4,"土":4,"木":2,"火":6,"金":8};
+const XING={"戊":3,"己":2,"庚":8,"辛":9,"壬":4,"癸":4};
+const GE={"戊丙":["青龍返首","吉"],"丙戊":["飛鳥跌穴","吉"],"乙辛":["青龍逃走","凶"],"辛乙":["白虎猖狂","凶"],"癸丁":["螣蛇夭矯","凶"],"丁癸":["朱雀投江","凶"],"庚丙":["太白入熒","凶"],"丙庚":["熒入太白","凶"],"庚癸":["大格","凶"],"庚壬":["小格","凶"],"庚己":["刑格","凶"]};
+
+function chart(y,m,d,h,mi,opt){
+  opt=opt||{}; let Y=y,M=m,D=d;
+  if(h===23 && opt.zi!=="same"){[Y,M,D]=addDays(y,m,d,1);}
+  const di=dayIdx(Y,M,D); const hb=Math.floor((h+1)/2)%12; const hs=((di%10)%5*2+hb)%10;
+  let hi=0; for(let i=0;i<60;i++) if(i%10===hs&&i%12===hb){hi=i;break;}
+  const back=di%10<5?di%10:di%10-5; const [fy,fm,fd]=addDays(Y,M,D,-back);
+  const fb=((di-back)%12+12)%12; const yuan=[0,3,6,9].includes(fb)?0:([2,5,8,11].includes(fb)?1:2);
+  const term=termAt(y,m,d,h,mi); const ju=JU[term.idx]; const yin=!!ju[0]; const n=ju[1+yuan];
+  const ground={}; let p=n; for(const s of "戊己庚辛壬癸丁丙乙"){ground[p]=s;p=nxt(p,yin);}
+  const inv={}; for(const k in ground) inv[ground[k]]=+k;
+  const xun=hi-hi%10, xs=XUNSTEM[xun], kong=KONG[xun];
+  const src=inv[xs], srcR=r5(src);
+  const hstem=G[hi%10], ref=hstem==="甲"?xs:hstem, dest=inv[ref], destR=r5(dest);
+  const sshift=(RING.indexOf(destR)-RING.indexOf(srcR)+8)%8;
+  let q=src; for(let i=0;i<hi-xun;i++) q=nxt(q,yin); const qR=r5(q);
+  const dshift=(RING.indexOf(qR)-RING.indexOf(srcR)+8)%8;
+  const gods=yin?["值符","騰蛇","太陰","六合","白虎","玄武","九地","九天"]:["值符","騰蛇","太陰","六合","勾陳","朱雀","九地","九天"];
+  const P={}; for(let k=1;k<=9;k++) P[k]={no:k,name:PNAME[k],dir:PDIR[k],el:PEL[k],ground:ground[k],flags:[],ge:[]};
+  const gi=RING.indexOf(destR);
+  for(let k=0;k<8;k++){const pi=((gi+(yin?-k:k))%8+8)%8; P[RING[pi]].god=gods[k];}
+  const mb=monthBranch(y,m,d,h,mi); let season=SEASON_BY_BRANCH[mb];
+  if(season==="土"){ // 四季月：立春/立夏/立秋/立冬前18日為土旺，其餘仍屬本季
+    const t=termAt(y,m,d,h,mi); const nextLi=[2,8,14,20].find(k=>k>t.idx); const ly=nextLi===undefined?t.year+1:t.year; const li=nextLi===undefined?2:nextLi;
+    const liDate=Date.UTC(ly,0,1)+TERMS[ly][li]*60000; const days=(liDate-Date.UTC(y,m-1,d,h,mi))/864e5;
+    if(days>18) season={1:"水",4:"木",7:"火",10:"金"}[mb];
+  }
+  RING.forEach((pl,i)=>{
+    const s0=RING[(i-sshift+8)%8]; const c=P[pl];
+    c.stars=[STAR[s0]]; c.heaven=[ground[s0]];
+    if(s0===2){c.stars.push("天禽");c.heaven.push(ground[5]);}
+    c.door=DOOR[RING[(i-dshift+8)%8]];
+  });
+  const horse=HORSE[Z[hb]], kongP=[...kong].map(b=>BR_PAL[b]);
+  for(const pl of RING){const c=P[pl];
+    const de=DEL[c.door], r=rel(de,c.el);
+    if(r==="剋") c.flags.push({t:"門迫",k:"bad",d:"門剋宮"});
+    if(r==="被剋") c.flags.push({t:"宮迫",k:"bad",d:"宮剋門"});
+    if(r==="生") c.flags.push({t:"門生宮",k:"good",d:"門生宮，和順"});
+    if(r==="被生") c.flags.push({t:"宮生門",k:"good",d:"宮生門，得助"});
+    if(TOMB[de]===pl) c.flags.push({t:c.door+"門入墓",k:"bad",d:"門入墓，受困、延遲"});
+    if(XING[c.heaven[0]]===pl) c.flags.push({t:"擊刑",k:"bad",d:"六儀擊刑"});
+    if(kongP.includes(pl)) c.flags.push({t:"空亡",k:"warn",d:"虛而未實"});
+    if(BR_PAL[horse]===pl) c.flags.push({t:"馬星",k:"info",d:"主動、變動"});
+    const g=GE[c.heaven[0]+c.ground]; if(g) c.ge.push({t:g[0],k:g[1]==="吉"?"good":"bad"});
+    if(c.heaven[0]===c.ground) c.ge.push({t:"伏吟",k:"warn"});
+    c.starState=c.stars.map(s=>wangState(SEL[s],season));
+  }
+  P[5].god=null;P[5].stars=[];P[5].heaven=[];P[5].door=null;
+  const dayXun=di-di%10, dayStem=G[di%10]==="甲"?XUNSTEM[dayXun]:G[di%10];
+  const zhifuP=destR, zhishiP=qR;
+  return {termTime:termDate(term.year,term.idx),input:{y,m,d,h,mi},dayGZ:gz(di),hourGZ:gz(hi),term:TERMN[term.idx],yuan:"上中下"[yuan],yin,ju:n,
+    xunHead:"甲"+Z[xun%12]+xs, xunStem:xs, kong, horse, season, monthBranch:Z[mb],
+    zhifuStar:STAR[srcR], zhishiDoor:DOOR[srcR], zhifuP, zhishiP,
+    dayStem, hourStem:ref, dayP:r5(inv[dayStem]), hourP:r5(inv[ref]), palaces:P,
+    fuTou:`${fy}/${fm}/${fd}`, groundOf:s=>r5(inv[s]),
+    heavenOf:s=>{for(const k of RING){if(P[k].heaven.includes(s))return k;}return null;}};
+}
+const api={chart,setTerms,rel,SHENG,KE,PEL,DEL,SEL,STEL,PNAME,PDIR,RING};
+if(typeof module!=="undefined") module.exports=api; else root.QM=api;
+})(this);
+</script>
+<script>(function(root){
+const QM=(typeof module!=="undefined")?require('./engine.js'):root.QM;
+
+/* ---------- 白話詞庫：每個符號「對一般人代表什麼」 ---------- */
+// [白話說明, 分數]
+const DOOR={
+ "開":["門路是打開的，事情推得動",2],
+ "休":["氣氛和緩，人和、好溝通",2],
+ "生":["有生機、有實際收穫",2],
+ "景":["和文件、資訊、名聲有關，表面熱鬧，要看實質內容",0],
+ "杜":["卡住、不通，比較適合先守著或私下處理",-1],
+ "傷":["容易有衝突、損耗，或身體受傷",-2],
+ "驚":["容易擔心受怕、有口舌是非",-2],
+ "死":["停滯、推不太動",-2]};
+const GOD={
+ "值符":["有貴人或有份量的人出面相挺",1],
+ "太陰":["有人在背後默默幫忙，適合低調處理",1],
+ "六合":["有合作、牽線、談得攏的機會",1],
+ "九地":["適合穩穩來、守得住，不宜急",1],
+ "九天":["有衝勁，適合主動出擊",1],
+ "騰蛇":["容易想太多、虛驚一場，或事情反反覆覆",-1],
+ "白虎":["壓力大，要防受傷、硬碰硬",-1],
+ "玄武":["要防被騙、資訊不透明或暗中損失",-1],
+ "勾陳":["容易拖延、糾纏不清",-1],
+ "朱雀":["會有口舌、消息或文件往來，說話要小心",-0.5]};
+const STAR={ // [代表, 分數]
+ "天蓬":["膽大冒險與耗損",-1],"天任":["穩重可靠",1],"天沖":["行動力",0.5],"天輔":["文教與貴人輔助",1],
+ "天英":["光彩與名聲（也容易急躁）",0.5],"天芮":["問題與病痛",-1],"天柱":["破損與口舌",-1],"天心":["醫藥與謀略",1],"天禽":["中正穩定",1]};
+const FLAG={
+ "門迫":["事情和環境有點對沖，做起來會覺得卡、要多花力氣",-1],
+ "宮迫":["外在環境不太配合，事情不好推",-1],
+ "入墓":["像被關住一樣，進展慢、要等",-1],
+ "擊刑":["容易有摩擦、被找麻煩或身體小傷",-1],
+ "空亡":["目前還「虛」，可能只是說說、還沒定案，要等時機到才落實",-1],
+ "馬星":["會有變動或移動，事情節奏變快",0],
+ "門生宮":["你出力就能帶動局面",0.5],
+ "宮生門":["環境支持你，有順風",0.5]};
+const GE={"青龍返首":["大吉之象，事情有轉機",1.5],"飛鳥跌穴":["大吉之象，機會自己找上門",1.5],"青龍逃走":["要防錢財流失、人離開",-1.5],"白虎猖狂":["壓力很大，要防受傷或被強勢對待",-1.5],
+ "螣蛇夭矯":["容易虛驚一場、文件出狀況",-1.5],"朱雀投江":["消息或文件容易落空",-1.5],"太白入熒":["容易處於被動、有損耗",-1.5],"熒入太白":["容易有爭執和消耗",-1.5],
+ "大格":["中間有阻隔，事情反覆",-1.5],"小格":["小有阻滯",-1.5],"刑格":["容易受制、有是非",-1.5],"伏吟":["原地踏步，適合守、不適合大動作",-0.5]};
+const STATE={"旺":"力量很足","相":"力量不錯","休":"力量普通","囚":"力量偏弱","廢":"力量很弱"};
+const BODY={1:"腰、腎、泌尿、耳朵",2:"腹部、腸胃",3:"腳、肝、筋",4:"肝膽、大腿、呼吸道",5:"腸胃",6:"頭部、肺、骨頭",7:"口腔、牙齒、肺、呼吸",8:"背部脊椎、手、關節",9:"心臟、眼睛、血壓"};
+const REL={"比和":"和你本人五行相同，彼此合得來","生":"對你有幫助，像是事情主動找上你","被生":"需要你多付出心力去經營","剋":"會帶給你壓力，讓你有點被牽著走","被剋":"你掌控得住，但要花力氣"};
+
+/* ---------- 每種問事的用神：代表什麼、順/卡時怎麼說、建議 ---------- */
+// id: [代表什麼（白話）, 順的時候的建議, 卡的時候的建議]
+const ROLE={
+ self:["你自己目前的狀態","你本身狀態不錯，可以主動一點。","你目前比較累或心裡有卡，先把自己狀態顧好再行動。"],
+ matter:["這件事本身","這件事本身有機會成。","這件事本身有阻力，要有心理準備會拖延或需要調整做法。"],
+ open:["機會與門路（職位、工作）","機會是開著的，可以積極去爭取。","機會還沒真正打開，先多方打聽，不要只押一個。"],
+ zhifu:["上面能拍板的人（主管、決策者）","上面的人對你有利，可以去爭取支持。","上面的人態度不明或使不上力，重要的事要白紙黑字。"],
+ liuhe:["合約與牽線的人","合作、談條件容易談攏。","談合作要小心細節，條件一定寫清楚。"],
+ sheng:["賺錢的機會、實際收穫","有實際收穫，可以期待。","收穫可能不如預期，花錢要保守。"],
+ capital:["本錢、投入的資金","資金面還算穩。","資金容易卡住或有損耗，不宜加碼。"],
+ patient:["病人本身的體力與生機","病人本身還有底子，恢復有希望。","病人體力較弱，需要多休養，家人多陪伴照顧。"],
+ ill:["病情本身","病情的力量不強，可望慢慢改善。","病情需要時間，要耐心配合治療。"],
+ doctor:["醫生與治療","治療方向合適，可以信任醫療團隊。","治療可能比較慢或需要調整，有疑問多和醫師討論。"],
+ recover:["恢復力","恢復的力量還在，好好休養會有進展。","恢復需要比較長的時間，不要心急。"],
+ caution:["需要特別小心的地方","",""],
+ other:["對方的心意與狀態","對方態度不錯，可以多互動。","對方目前有顧慮或狀態不穩，先多了解、別逼太緊。"],
+ bond:["兩人的緣分","緣分是有的，有機會走在一起。","緣分還需要經營，急不得。"],
+ go:["出發與行程能否順利展開","可以出發，行程推得動。","行程容易卡關，出發前再確認細節。"],
+ rest:["旅途平安與休息","旅途大致平安，心情輕鬆。","旅途要多注意安全與休息。"],
+ gain:["這趟的收穫","此行會有收穫。","收穫可能不如預期，別抱太大期待。"],
+ move:["變動與移動","變動對你有利，可以順勢而動。","變動多，行程可能改來改去，預留彈性。"],
+ studyprep:["學習與準備程度","準備方向對，有人可以請教。","準備還不夠扎實，要加強弱項。"],
+ exam:["考試表現與成績","考試表現可以期待。","考場上容易緊張或失常，多做模擬練習。"],
+ luck:["靈感與考運","有靈感、有考運。","考運平平，靠實力穩穩拿分。"],
+ opp:["對方","對方本身也有困難，你比較有利。","對方實力不弱，要做好準備。"],
+ result:["處理過程與結果","結果偏向對你有利。","過程會比較辛苦，結果需要爭取。"],
+ judge:["裁決的人（法官、上級）","裁決的人態度對你有利。","裁決的人不一定站在你這邊，證據要充分。"],
+ helper:["能幫你或能做主的人","有人能幫你，可以開口求助。","能幫忙的人目前使不上力，先靠自己。"],
+ trend:["事情接下來的走向","事情會往好的方向走。","事情的走向有波折，邊走邊調整。"],
+ nature:["你的本性與基本盤","本性條件不錯，有自己的優勢。","本性中有容易卡住自己的地方，需要多留意。"],
+ axis:["人生的主軸與貴人","一生有貴人、有主軸。","人生主軸上壓力與責任較重。"],
+ style:["做事的方式","做事方式得力。","做事方式容易被卡住，需要轉個彎。"],
+ career:["事業","事業有發揮空間。","事業上常有被壓住、要等時機的感覺。"],
+ wealth:["財運","財運有來源。","財運要靠穩健累積，防漏財。"],
+ health:["健康上的弱點","健康底子不錯。","這是身體較需要保養的地方。"]
+};
+const TYPEADV={
+ career:{good:"可以積極爭取，但條件要談清楚。",warn:"可以進行，但不要急著定案，多比較幾個機會。",bad:"時機還不成熟，建議先觀望、做好準備。"},
+ wealth:{good:"可以適度把握機會，仍要控制風險。",warn:"以穩為主，不宜大筆投入。",bad:"先保守，避免投資、借貸或擴張。"},
+ health:{good:"恢復有底子，配合治療、好好休養。",warn:"需要時間，按部就班配合醫療。",bad:"需要較多耐心，多和醫療團隊溝通，家人多陪伴。"},
+ love:{good:"可以主動表達心意。",warn:"順其自然，多溝通、多了解對方。",bad:"先別急著推進，給彼此一點空間。"},
+ travel:{good:"可以出發，行程大致順利。",warn:"可以去，但行程預留彈性。",bad:"能延就延，不然就要準備周全。"},
+ study:{good:"準備方向對，保持節奏就好。",warn:"加強弱項，多做練習。",bad:"要再加把勁，調整讀書方法。"},
+ legal:{good:"情勢對你有利，但仍要準備充分。",warn:"雙方各有籌碼，可以考慮協商。",bad:"情勢較不利，建議尋求專業協助，考慮和解。"},
+ general:{good:"可以進行。",warn:"可以進行，但多留意細節。",bad:"建議暫緩，或換個方式進行。"},
+ natal:{info:"命盤看的是個性和傾向，不是定數，用來了解自己就好。"}
+};
+const TYPES={
+ career:{name:"事業・工作・聘任"},wealth:{name:"財運・投資・生意"},health:{name:"健康・疾病"},love:{name:"感情・婚姻"},
+ travel:{name:"出行・搬遷・洽談"},study:{name:"考試・學業"},legal:{name:"官司・談判・人際"},general:{name:"一般問事"},natal:{name:"出生命盤概覽"}};
+
+function findDoor(ch,d){for(const p of QM.RING) if(ch.palaces[p].door===d) return p;}
+function findStar(ch,s){for(const p of QM.RING) if(ch.palaces[p].stars.includes(s)) return p;}
+function findGod(ch,g){for(const p of QM.RING) if(ch.palaces[p].god===g) return p;}
+const stemP=(ch,s)=>ch.heavenOf(s)||ch.groundOf(s);
+function roles(ch,q){
+ const R=(id,label,tech,p)=>({id,label,tech,p});
+ const self=R("self","本人","日干"+ch.dayStem,ch.dayP), matter=R("matter","這件事","時干"+ch.hourStem,ch.hourP);
+ const horseP=({"寅":8,"申":2,"巳":4,"亥":6})[ch.horse];
+ switch(q.type){
+  case "career": return [self,matter,R("open","開門","職位",findDoor(ch,"開")),R("zhifu","值符","決策者",ch.zhifuP),R("liuhe","六合","合約",findGod(ch,"六合"))];
+  case "wealth": return [self,matter,R("sheng","生門","財源",findDoor(ch,"生")),R("capital","戊","資本",stemP(ch,"戊"))];
+  case "health": {const t=q.target; const pp=t==="self"?ch.dayP:t==="oldman"?6:t==="oldwoman"?2:ch.hourP;
+    const pl=t==="self"?"病人（本人）":t==="oldman"?"病人（男性長輩）":t==="oldwoman"?"病人（女性長輩）":"病人";
+    return [R("patient",pl,t==="oldman"?"乾宮":t==="oldwoman"?"坤宮":t==="self"?"日干":"時干",pp),R("ill","天芮","病星",findStar(ch,"天芮")),R("doctor","天心","醫星",findStar(ch,"天心")),R("recover","生門","生機",findDoor(ch,"生")),R("caution","死門","",findDoor(ch,"死"))];}
+  case "love": {const o=q.gender==="female"?"庚":"乙"; return [self,R("other","對方","天盤"+o,stemP(ch,o)),R("bond","六合","緣分",findGod(ch,"六合"))];}
+  case "travel": return [self,R("go","開門","出行",findDoor(ch,"開")),R("rest","休門","平安",findDoor(ch,"休")),R("gain","生門","收穫",findDoor(ch,"生")),R("move","馬星","變動",horseP)];
+  case "study": return [self,R("studyprep","天輔","學業",findStar(ch,"天輔")),R("exam","景門","考試",findDoor(ch,"景")),R("luck","丁","文星",stemP(ch,"丁"))];
+  case "legal": return [self,R("opp","對方","時干"+ch.hourStem,ch.hourP),R("result","開門","結果",findDoor(ch,"開")),R("judge","值符","裁決者",ch.zhifuP)];
+  case "natal": return [R("nature","本人","日干"+ch.dayStem,ch.dayP),R("axis","值符","主軸",ch.zhifuP),R("style","值使","行事",ch.zhishiP),R("career","開門","事業",findDoor(ch,"開")),R("wealth","生門","財運",findDoor(ch,"生")),R("health","天芮","健康",findStar(ch,"天芮"))];
+  default: return [self,matter,R("helper","值符","主事者",ch.zhifuP),R("trend","值使","走向",ch.zhishiP)];
+ }
+}
+const strong=s=>s==="旺"||s==="相", weak=s=>s==="囚"||s==="廢";
+
+/* 把一個宮位翻成白話理由：pros / cons，每條都是完整句子 */
+function reasonsFor(ch,P,opt){
+ const pros=[],cons=[]; let s=0; const add=(txt,v,tech)=>{const line=`${txt}（${tech}）`; if(v>0)pros.push(line); else if(v<0)cons.push(line); s+=v;};
+ const d=DOOR[P.door]; add(d[0],d[1],P.door+"門");
+ const g=GOD[P.god]; add(g[0],g[1],P.god);
+ P.flags.forEach(f=>{const k=f.t.endsWith("入墓")?"入墓":f.t; const m=FLAG[k]; if(!m)return;
+   if(k==="馬星"){(opt&&opt.horseGood?pros:cons).push(`${m[0]}（馬星）`); return;}
+   if(k==="伏吟"&&opt&&opt.skipFuyin) return;
+   add(m[0],m[1],f.t);});
+ P.ge.forEach(x=>{if(x.t==="伏吟"&&opt&&opt.skipFuyin)return; const m=GE[x.t]; if(m) add(m[0],m[1],x.t);});
+ const st=P.stars[0], ss=P.starState[0], sm=STAR[st];
+ if(sm[1]>0){ if(strong(ss)){pros.push(`坐鎮的${st}代表${sm[0]}，而且${STATE[ss]}（${st}${ss}）`); s+=1.5;}
+   else if(weak(ss)){cons.push(`坐鎮的${st}代表${sm[0]}，但${STATE[ss]}，幫助有限（${st}${ss}）`); s+=0.5;}
+   else s+=1; }
+ else if(sm[1]<0 && strong(ss)){cons.push(`坐鎮的${st}代表${sm[0]}，而且${STATE[ss]}（${st}${ss}）`); s-=1.5;}
+ else s+=sm[1]*0.5;
+ return {pros,cons,score:s};
+}
+function illnessReasons(ch,P){
+ const i=P.stars.indexOf("天芮"), ss=P.starState[i]; const pros=[],cons=[]; let s=0;
+ if(strong(ss)){cons.push(`病星正當令，${STATE[ss]}，表示病情有一定份量，需要耐心治療（天芮${ss}）`); s-=1;}
+ else {pros.push(`病星不當令，${STATE[ss]}，病情的力量不算強（天芮${ss}）`); s+=1;}
+ if(P.flags.some(f=>f.t==="空亡")){pros.push("病星落在空亡，傳統上表示病勢較虛、有機會緩解（空亡）"); s+=1;}
+ if(["白虎","騰蛇","玄武"].includes(P.god)){cons.push(`同宮有${P.god}，${GOD[P.god][0]}（${P.god}）`); s-=0.5;}
+ if(["死","傷","驚","杜"].includes(P.door)){cons.push(`同宮是${P.door}門，${DOOR[P.door][0]}（${P.door}門）`); s-=0.5;}
+ else {pros.push(`同宮是${P.door}門，${DOOR[P.door][0]}，病情有轉機（${P.door}門）`); s+=0.5;}
+ if(P.flags.some(f=>f.t==="馬星")) cons.push("有馬星，病況或治療安排可能會有變動，例如換治療方式、轉院（馬星）");
+ return {pros,cons,score:s};
+}
+function nextDates(ch,branches){
+ const Z="子丑寅卯辰巳午未申酉戌亥", G="甲乙丙丁戊己庚辛壬癸"; const out=[]; const {y,m,d}=ch.input;
+ const base=Date.UTC(y,m-1,d); const di0=Math.round((base-Date.UTC(1900,0,1))/864e5);
+ for(let k=1;k<=24;k++){const idx=((di0+k+10)%60+60)%60; const b=Z[idx%12];
+   if(branches.includes(b)&&!out.find(o=>o.b===b)){const t=new Date(base+k*864e5); out.push({b,gz:G[idx%10]+b,date:`${t.getUTCMonth()+1}/${t.getUTCDate()}`});}}
+ return out;
+}
+function verdictOf(score){ return score>=1.5?"good":score>=-0.5?"warn":"bad"; }
+const VWORD={good:"順",warn:"普通",bad:"較吃力"};
+
+function interpret(ch,q){
+ const raw0=roles(ch,q).filter(r=>r.p);
+ const fuyin=QM.RING.every(p=>ch.palaces[p].ge.some(g=>g.t==="伏吟"));
+ const solo=["ill","caution","opp"]; const raw=[];
+ for(const r of raw0){const g=!solo.includes(r.id)&&raw.find(x=>x.p===r.p&&!solo.includes(x.id)); if(g){g.ids.push(r.id);g.labels.push(r.label);} else raw.push({...r,ids:[r.id],labels:[r.label]});}
+ const items=[]; const selfEl=QM.PEL[ch.dayP];
+ for(const r of raw){
+   const P=ch.palaces[r.p], infos=r.ids.map(id=>ROLE[id]);
+   let e;
+   if(r.p===5||!P.door) e={pros:[],cons:[],score:0};
+   else if(r.id==="ill") e=illnessReasons(ch,P);
+   else e=reasonsFor(ch,P,{horseGood:r.ids.includes("move"),skipFuyin:fuyin});
+   if(q.type!=="health"&&!r.ids.some(x=>["self","nature"].includes(x))&&r.p!==ch.dayP&&r.p!==5){
+     const rel=QM.rel(QM.PEL[r.p],selfEl); const t=`和你的關係：${REL[rel]}（宮位五行）`;
+     (rel==="生"||rel==="比和"?e.pros:e.cons).push(t);
+   }
+   if(q.type==="health"&&r.ids.includes("patient")) e.body=`這個宮位傳統上對應身體的：${BODY[r.p]}`;
+   if(r.id==="ill") e.body=`病星落在的部位，傳統上對應：${BODY[r.p]}`;
+   let v=verdictOf(e.score), verdict;
+   if(r.id==="caution"){ v="warn"; verdict=e.cons.length?"這裡是比較需要小心的地方，多留意下面提到的狀況即可，不必過度擔心。":"這一宮沒有特別凶的訊號，不必擔心。"; }
+   else if(r.id==="opp"){ v=e.score>=1.5?"bad":e.score>=-0.5?"warn":"good"; verdict=v==="bad"?"對方條件不差、有人支持，"+ROLE.opp[2]:v==="good"?"對方本身也有不少困難，"+ROLE.opp[1]:"對方有優勢也有弱點，雙方各有籌碼。"; }
+   else verdict=infos.map(info=>v==="good"?info[1]:v==="bad"?info[2]:info[1].replace(/。$/,"")+"，但也有要注意的地方。").join("");
+   items.push({...r,label:r.labels.join("・"),meaning:infos.map(i=>i[0]).join("、"),palace:P,verdict,tone:v,pros:e.pros,cons:e.cons,body:e.body,score:e.score,
+     head:`${P.name}（${P.dir}）・${P.god||""}・${P.stars.join("、")}・${P.door?P.door+"門":""}・天盤${P.heaven.join("")} 地盤${P.ground}`});
+ }
+ const scored=items.filter(i=>i.id!=="caution"&&i.id!=="opp"); const avg=scored.reduce((a,b)=>a+(b.id==="opp"?-b.score:b.score),0)/Math.max(1,scored.length);
+ let tone=avg>=1.5?"good":avg>=0?"warn":"bad";
+ if(fuyin&&tone==="good") tone="warn"; // 伏吟主停滯，最多評為「有好有壞」
+ const TEND={good:"偏順，可以進行",warn:"有好有壞，可以進行但要留意",bad:"阻力較多，宜保守"};
+ const HT={good:"生機不錯，宜耐心調養",warn:"需要時間，按部就班",bad:"需要較多耐心，配合醫療"};
+ let tendency=q.type==="health"?HT[tone]:TEND[tone];
+ if(q.type==="natal"){tone="info";tendency="了解自己的個性與傾向";}
+ // 整體白話
+ const ranked=[...scored].sort((a,b)=>b.score-a.score);
+ const best=ranked.find(i=>i.pros.length&&i.tone!=="bad"), worst=[...ranked].reverse().find(i=>i.cons.length&&i.tone!=="good");
+ const clean=s=>s.replace(/（[^）]*）$/,"");
+ let summary=q.type==="natal"?"這張是出生命盤，看的是個性與一生的傾向。":`整體來看，${tendency}。`;
+ if(best) summary+=`最有利的是「${best.meaning}」：${clean(best.pros[0])}。`;
+ if(worst&&worst!==best) summary+=`最需要注意的是「${worst.meaning}」：${clean(worst.cons[0])}。`;
+ if(fuyin&&q.type!=="natal") summary+="另外，這張是「伏吟盤」，九星都停在原位，傳統上代表事情偏向原地踏步，適合守、不適合大動作。";
+ summary+=(TYPEADV[q.type][tone]||TYPEADV[q.type].info||"");
+ const good=[],bad=[];
+ items.forEach(i=>{ if(i.id==="opp"){return;} i.pros.forEach(p=>good.push(`${i.meaning}：${p}`)); i.cons.forEach(c=>bad.push(`${i.meaning}：${c}`)); });
+ const kong=nextDates(ch,[...ch.kong]), horse=nextDates(ch,[ch.horse]); const timing=[];
+ if(kong.length) timing.push(`${kong.map(o=>o.date).join("、")}（${kong.map(o=>o.gz+"日").join("、")}）：盤上「還沒落實」的部分，傳統上在這幾天比較容易有消息或定案。`);
+ if(horse.length) timing.push(`${horse.map(o=>o.date).join("、")}（${horse.map(o=>o.gz+"日").join("、")}）前後：比較容易出現變動或新的安排。`);
+ return {type:q.type,typeName:TYPES[q.type].name,items,avg,tendency,tone,summary,good:[...new Set(good)],bad:[...new Set(bad)],timing};
+}
+function chartLine(ch){return `${ch.input.y}/${ch.input.m}/${ch.input.d} ${String(ch.input.h).padStart(2,"0")}:${String(ch.input.mi).padStart(2,"0")}｜${ch.dayGZ}日 ${ch.hourGZ}時｜${ch.term}${ch.yuan}元 ${ch.yin?"陰":"陽"}遁${"一二三四五六七八九"[ch.ju-1]}局`;}
+function fullText(ch,R,title){
+ const L=[`【${title||"奇門占事"}】`,chartLine(ch),`問事類別：${R.typeName}`,"",`整體：${R.summary}`,""];
+ R.items.forEach(i=>{L.push(`◆ ${i.meaning}（${i.label}）：${{good:"順",warn:"普通",bad:"較吃力"}[i.tone]}。${i.verdict}`);
+   if(i.body) L.push(`　${i.body}`);
+   i.pros.forEach(p=>L.push(`　＋ ${p}`)); i.cons.forEach(c=>L.push(`　－ ${c}`));
+   L.push("");});
+ if(R.timing.length){L.push("時間參考："); R.timing.forEach(g=>L.push("・"+g)); L.push("");}
+ L.push(`盤面：${R.items.map(i=>i.label+" "+i.head).join("；")}`);
+ L.push("","※ 奇門遁甲屬傳統術數，僅供參考，不能取代醫療、法律、財務等專業判斷。"); return L.join("\n");
+}
+function friendText(ch,R,title){
+ const soften=s=>s.replace(/（[^）]*）$/,"");
+ const L=[`【${title||"奇門盤簡要說明"}】`,`（${ch.input.y}/${ch.input.m}/${ch.input.d} ${String(ch.input.h).padStart(2,"0")}:${String(ch.input.mi).padStart(2,"0")} 起盤，傳統術數參考）`,"",R.summary,""];
+ R.items.filter(i=>i.id!=="caution"&&i.id!=="opp").forEach(i=>L.push(`・${i.meaning}：${{good:"順",warn:"普通",bad:"較吃力"}[i.tone]}，${i.verdict}`));
+ if(R.timing.length) L.push("","時間參考：",...R.timing.map(x=>"・"+x));
+ L.push("",R.type==="health"?"以上不能取代醫師的診斷與建議，請以醫療團隊的判斷為準。祝早日康復。":"以上僅供參考，實際決定請以現實條件與專業意見為準。");
+ return L.join("\n");
+}
+const api={interpret,fullText,friendText,chartLine,TYPES,BODY};
+if(typeof module!=="undefined") module.exports=api; else root.QI=api;
+})(this);
+</script>
+<script>
+QM.setTerms("05x50ma412or1j681zrm2ghn2xcw3edd3vj24ct44u705bn35t4j6alb6s0m79cj7qkm87nk8oli95dy9m1ma2ktaj0sazec,06730mjz12yq1jg3201j2grg2xmp3en43vsq4d2t4ugj5bwr5tdy6aux6s9y79m57qty87x78oux95nn9mb5a2unajahazob,06gv0mu1138j1jq420ba2h1e2xwd3ewy3w2d4dcl4uq75c6g5tno6b4m6sjr79vt7r3u886v8p4t95xb9ml1a349ajkbazxw,06qp0n3l13ic1jzo20l32hay2y663f6i3wc64dm44v005cg35txj6bed6stn7a5o7rdp88gs8pen96779musa3e3aju1b07p,05wf0m9f12o31j5k1zqx2ggx2xc23ecj3vi24cs74u5t5bm35t376ak96rz879bg7qj987mh8ok795cv9m0da2jsaizmazdf,06610mj712xr1jfe200o2gqs2xlv3emf3vrw4d204ufo5bvt5td36atw6s9379l17qt487w28ou295mi9maaa2thaj9lazn5,06fz0msu137m1joy20af2h082xvi3evt3w1h4dbf4up85c5a5tmn6b3h6sin79ur7r2q885w8p3q95wf9mk0a33gajjbazx3,06pp0n2s13hb1jyt20k12ha32y533f5n3wb24dla4uyv5cf75twc6bde6sse7a4k7rcg88fm8pde96609mtma3cyajsvb06l,05v90m8a12mw1j4e1zpo2gfo2xat3eb93vgu4cqw4u4p5bkt5t276aj06rya79a77qia87l88oj795bm9lzda2ikaiymazc7,06510mhy12wr1je41zzk2gpe2xkm3ekx3vqj4d0i4ue85buc5tbl6asi6s7l79jr7qrm87uu8osl95lb9m8ta2saaj84azlz,06ek0mrr136a1jnw20922gz62xu43eun3w004da64unp5c3z5tl46b246sh879tc7r1d884h8p2e95uy9mina31vajhvazvh,06o70n1513ft1jx720ik2h8h2y3o3f403w9n4djl4uxf5cdg5tuw6bbp6sr17a317rb588e78pc6964q9msea3boajrmb058,05tx0m6v12li1j2w1zo82ge52x9b3e9q3vfa4cpd4u315bj95t0e6ahf6rwf798o7qgi87js8ohj95aa9lxta2hbaix5azay,063i0mgn12v51jcp1zxv2gny2xix3ejh3vow4cz14ucn5bsv5ta36aqy6s6579i57qq887t98ora95jt9m7na2qwaj71azkm,06dg0mqb13511jmb207o2gxf2xsl3ess3vye4d8a4um45c255tjj6b0e6sfn79rq7qzt882z8p0w95tl9mh9a30pajgnazuf,06n30n0513ep1jw520hd2h7a2y293f2o3w814di54uvp5cc05tt56ba96spa7a1k7r9g88cq8paj96399mqua3a9ajq6b03y,05sl0m5p12k91j1s1zn02gd12x813e8h3vdx4cny4u1n5bhq5sz26afv6rv679757qfb87ic8oge958v9lwoa2fwaiw0az9l,062g0mfc12u51jbg1zww2gmp2xhx3ei53vnq4cxl4uba5brb5t8k6apf6s4j79gp7qon87rx8ops95ik9m66a2pqaj5mazjh,06c30mp8133r1jlb206h2gwj2xrg3ery3vxa4d7f4ukw5c155ti86az86sea79qg7qyf881n8ozl95s99mfza2zdajfdazt3,06ls0mys13de1jus20g32h5z2y123f1f3w6z4dgx4uuq5car5ts66b8y6soa7a097r8e88bg8p9h96209mpsa393ajp6b02s,05rl0m4i12j81j0j1zlx2gbq2x6w3e783vcs4cms4u0h5bgn5sxu6aeu6rtv79637qdx87h78oey957q9lv9a2esaiunaz8j,06140meb12su1jag1zvl2glo2xgm3eh43vmg4cwm4ua65bqe5t7l6aoj6s3p79fs7qnu87qx8oox95hg9m59a2ojaj4mazi8,06b20mny132o1jjz205c2gv42xq93eqh3vw24d5x4ujq5bzq5th66ay06sdc79pf7qxl880r8oyr95re9mf4a2yhajegazs5,06kt0mxs13cd1jtr20f02h4w2xzx3f0a3w5p4dfs4utd5c9n5tqt6b7x6sn079zb7r7988am8p8g96189mota38aajo4b01x,05qh0m3k12i01izi1zkn2gao2x5m3e633vbh4clk4tz85bfd5swo6adk6rsv794x7qd487g78oeb956v9luqa2dzaiu4az7o,060i0mdc12s21j9a1zun2gkd2xfi3efo3vl84cv24u8t5bot5t656an06s2879ed7qmf87pq8ono95gi9m47a2nraj3qazhl,06a80mnb131u1jja204e2gub2xp63epj3vut4d4v4uic5bym5tfp6aws6sbv79o57qw587zg8oxf95q69mdwa2xdajdeazr6,06jv0mww13bg1jsv20e12h3w2xyu3ez43w4j4deg4us55c865tpk6b6e6slr79xt7r6188958p7995zu9mnpa370ajn5b00r,05pm0m2i12h81iyi1zjv2g9m2x4r3e4y3vag4ckb4txy5be05sv76ac56rr8793h7qbf87es8ocn955h9lt3a2coaiskaz6g,05z20mc812qr1j8b1ztg2gjh2xed3eet3vk24cu54u7m5bns5t4v6alt6s0w79d27ql487ob8omd95f19m2wa2maaj2eazg3,068v0mlt130g1jhs20322gsu2xnw3eo33vtl4d3f4uh55bx45teh6av96sak79mm7qut87xz8ow295or9mcla2w0ajc4azpt,06il0mvi13a51jrg20cp2h2h2xxi3exs3w374dd64uqr5c6y5to46b556sk779wi7r4e887r8p5l95yf9mm1a35majliazze,05nz0m1412fl1ix41zi72g872x323e3i3v8t4ciw4twh5bcn5stw6aat6rq179247qa987dd8obf95409lrua2b5airbaz4x,05xs0mao12pf1j6p1zs22ghr2xcv3ed03vii4csa4u615blz5t3c6ak66rzf79bk7qjo87mx8okw95do9m1ea2kwaj0wazep,067e0mkg12z01jgf201m2grh2xme3emq3vs04d204ufh5bvp5tct6atw6s8z79lb7qtc87wq8oun95nh9mb5a2unajakazod,06gy0mu0138h1jpx20b12h0x2xvu3ew73w1k4dbj4up65c595tmm6b3h6siv79uy7r38886d8p4k95x69ml2a34dajkiazy2,05mv0lzo12ed1ivk1zgw2g6l2x1p3e1v3v7e4ch94tuy5baz5ss96a966rod790l7q8n87c08o9y952u9lqja2a4aiq2az3x,05wj0m9m12o21j5j1zql2ggj2xbc3ebq3vgz4cr24u4i5bkr5t1v6aix6ry079a97qic87ln8ojp95ch9m0ca2juaizxazdp,066f0mje12xy1jf9200e2gq42xl13el73vql4d0e4ue35bu35tbi6asc6s7r79jv7qs687vd8otk95m99ma7a2tmaj9taznh,06gb0mt8137v1jp320ab2gzz2xuy3ev23w0g4dab4unw5c405tl86b2a6shf79ts7r1t88598p3695w39mjqa33cajj9azx6,05lr0lyx12dd1iuw1zfy2g5w2x0o3e123v694cga4ttr5b9x5sr36a826rn978zg7q7n87aw8o92951r9lpoa291aip7az2w,05vq0m8n12nc1j4m1zpx2gfm2xan3ear3vg64cpw4u3k5bjg5t0r6ahj6rwu798y7qh687kg8oil95bf9lzba2iuaiyyazcr,065i0mii12x41jeg1zzm2gpe2xkb3ekj3vpt4czq4ud65btc5tae6arg6s6i79iu7qqv87ub8osa95l89m8ya2slaj8kazmh,06f30ms7136m1jo320942gz02xtt3eu53vzf4d9e4umy5c325tkc6b176sgi79sm7r0v88418p2895uv9miua327ajifazw2,05ky0lxt12cj1itq1zf12g4p2wzr3dzu3v5c4cf44tst5b8s5sq26a6x6rm578yb7q6e879p8o7p950j9loaa27vainvaz1r,05ug0m7k12m31j3k1zoo2gek2x9e3e9q3vex4cox4u2c5bik5szm6agp6rvr79827qg387jg8ohg95aa9ly3a2hmaixoazbh,06460mh712vq1jd31zy72go02xiw3ej33voe4cy94ubv5bru5t976aq26s5g79hk7qpx87t48ord95k19m80a2rdaj7kazl6,06e00mqu135i1jmo207x2gxk2xsl3eso3vy44d7x4ulk5c1m5tiv6azv6sf279re7qzg882x8p0w95tt9mhia314ajh1azux,05jh0lwk12ay1isf1zdf2g3c2wy33dyh3v3o4cdq4tr65b7e5soj6a5k6rkq78x07q56878h8o6n94ze9lnba26saimxaz0m,05te0m6b12kw1j251znb2gcz2x7w3e7z3vdc4cn34u0r5bgo5sy16aet6ru7796b7qel87hv8og3958w9lwva2geaiwlazad,06360mg412up1jbx1zx22gmp2xhk3eho3vmx4cwr4ua85bqc5t7h6aok6s3p79g47qo687ro8opo95io9m6ea2q3aj62azk0,06cl0mpq13441jlk206j2gwd2xr33erc3vwi4d6f4ujw5c005th86ay76sdi79pq7qy1881b8ozk95sa9mg9a2znajfvaztj,05ie0lv9129x1ir51zce2g202wx03dx13v2g4cc44tps5b5n5smy6a3s6rj278v97q3g876t8o4y94xu9lloa25aailcayz7,05rx0m4z12ji1j0w1zm02gbt2x6n3e6v3vc24clz4tzc5bfi5swj6adk6rsn794z7qd187gj8oel957k9lvea2f2aiv4az90,061n0mep12t51jai1zvi2glb2xg23eg93vlh4cvc4u8v5bov5t656an06s2e79ei7qmv87q48oog95h79m59a2ooaj4yazim,06bi0moc132z1jk4205c2guw2xpv3epv3vv94d504uin5byn5tfx6awv6sc479oe7qwi87zz8oxz95qy9mepa2ydajeeazsb,05gy0lu2128i1ipx1zay2g0s2wvi3dvt3v0y4cay4toc5b4k5slo6a2q6rhw78u77q2c875q8o3t94wo9lkka243aik7ayy0,05qs0m3s12id1izo1zks2gah2x5c3e5e3vap4ckf4ty05bdw5sv96ac26rrh793l7qby87f88odj956b9luba2dtaiu1az7r,060m0mdi12s61j9d1zuk2gk62xf33ef43vke4cu64u7o5bnp5t4v6alx6s1479dj7qln87p88on995ga9m42a2nqaj3pazhm,06a60mna131n1jj220402gtu2xoj3eot3vty4d3x4uhc5bxi5teo6avp6saz79na7qvl87yy8ox895q19me2a2xiajdpazrd,05g60lt1127m1ios1z9y2fzk2wui3duj3uzx4c9m4tna5b365ski6a1b6rgo78su7q15874i8o2q94vn9ljma237aijdayx7,05py0m2x12hh1iyq1zjt2g9h2x4a3e4e3v9l4cjg4twv5bd05su36ab56rq9792o7qar87eb8ocd955f9ltaa2d1ait4az73,05zq0mct12r71j8k1zth2gj72xdu3ee03vj34csy4u6e5bmg5t3p6akn6s0179c97qkn87nz8omc95f49m38a2mpaj30azgp,069m0mmh13141ji9203f2gsx2xnu3enr3vt34d2p4ugb5bw85tdk6aug6s9s79m37qub87xs8ovx95ow9mcra2weajchazqd,05f10ls4126m1inz1z902fys2wti3dtq3uyt4c8q4tm25b275sj96a0c6rfg78ru7pzz873h8o1n94ul9liia225aii9ayw4,05ou0m1v12gd1ixp1zir2g8g2x383e3b3v8i4ci84tvp5bbl5ssu6a9n6rp079157q9k87cv8ob895429ls7a2bqais1az5s,05yo0mbj12q61j7b1zsh2gi02xcw3ecv3vi54crt4u5c5bla5t2h6ajf6rym79b07qj587mq8okt95dv9m1pa2lgaj1hazfg,06820ml612zj1jgx201t2grm2xm83emh3vrj4d1h4uev5bv15tc56at76s8f79kq7qsz87we8oum95nh9mbha2v0ajb8azoz,05ds0lqq125a1imi1z7m2fx82ws23ds23uxd4c714tkn5b0j5shv69yo6re278q77pyj871u8o0494sz9lgza20jaigrayuj,05nd0m0b12ex1iw51zha2g6w2x1p3e1q3v6x4cgp4tu45ba65sra6a8c6rni78zx7q8187bm8o9p952s9lqla2acaiqdaz4b,05wx0ma012od1j5q1zqm2gge2xb03eb63vg84cq24u3g5bjj5t0r6ahq6rx4799f7qhu87l88ojm95ch9m0ka2k1aj0bazdz,066t0mjm12y81jfb200g2gpx2xks3ekp3vq14czn4ud95bt65tai6are6s6s79j37qrf87uw8ot595m59ma3a2tqaj9uazno,05cd0lpc123s1il11z602fvo2wqd3dqi3uvm4c5h4tiu5az05sg369x76rcc78ot7pwz870l8nyr94ru9lfra1ziaifmaytj,05m70lz912do1iuy1zfv2g5i2x053e063v594cf04tsf5b8d5spn6a6i6rlx78y47q6l879y8o8e951a9lpha292aipgaz37,05w50m9012nn1j4p1zpt2gf82xa13e9v3vf34con4u265bi25szb6ag96rvk797z7qg987jv8oi295b69lz2a2iuaiyyazcx,065l0mip12x31jef1zzc2gp12xjm3ejq3voq4cyl4ubv5bs05t926aq66s5e79hu7qq487to8ory95ky9m8ya2slaj8sazmn,05bf0loe122x1ik61z582fuu2wpl3dpl3uus4c4e4thw5axp5sez69vr6rb678nc7pvr86z58nxj94qg9lela1y6aieiaysb,05l70ly312cq1itw1zf22g4l2wzf3dzd3v4k4ce84trn5b7l5soo6a5o6rkt78x87q5e87918o76950d9loaa284aio8az28,05uv0m7z12mc1j3p1zoj2ge92x8t3e8z3vdz4cnt4u155bh85syc6afc6rum796y7qfb87is8oh695a39ly8a2huaiy5azbx,064s0mho12w91jdd1zyg2gnx2xiq3eim3vnw4cxi4ub35bqz5t8b6ap56s4k79gs7qp587sk8oqv95jt9m7ua2rhaj7pazlk,05ac0lnb121v1ij31z452ftq2woh3doi3utm4c3f4tgs5aww5sdz69v36ra978mq7puv86yh8nwl94po9ldka1xbaidfayre,05k20lx612bl1isy1zdu2g3j2wy43dy73v374ccy4tqb5b6a5sni6a4f6rjt78w37q4j877y8o6e94z99lnga26zaincaz12,05ty0m6s12lf1j2i1znn2gd22x7w3e7q3vcy4cmi4u015bfw5sx76ae46rth795v7qe887ht8og395969lx4a2guaiwxazat,063g0mgh12uu1jc41zx02gmo2xha3ehe3vme4cw94u9k5bpq5t6t6any6s3579fo7qnx87rk8opu95ix9m6xa2qmaj6sazkm,059b0lm9120n1ihv1z2s2fsd2wn13dn13us64c1u4tfb5av85sci69tc6r8s78kz7pth86wv8nvc94o99lcha1w2aicgayq7,05j40lvy12aj1irl1zco2g222wwu3dwo3v1u4cbf4tow5b4t5sm06a306ri978up7q2y876m8o4u94y29lm0a25waim0az02,05sp0m5s12k31j1d1zm52gbr2x683e693vb54cky4ty65bea5sve6aci6rrt79497qco87g98oen957o9lvta2fhaivsaz9l,062f0mfc12tu1jaz1zvy2gle2xg33efw3vl14cuk4u825bnw5t586am36s1k79du7qmb87ps8oo895h89m5ca2ozaj5aazj3,057x0lku11zf1igk1z1m2fr42wlt3dlq3uqt4c0h4tdt5att5sav69rx6r7378jm7prt86vj8ntr94mz9laxa1usaiawayoy,05hl0lup12921iqe1zb72g0v2wvc3dve3v0b4ca14tna5b385skc6a196rgl78sw7q1d874v8o3d94wd9lkna24aaikqayyi,05rg0m4b12iw1izy1zl02gad2x543e4w3va24cjk4tx25bcu5su46aaz6rqd792o7qb387eo8od195659lu7a2dzaiu8az85,060w0mdw12sc1j9j1zug2gk02xel3eek3vjk4ctc4u6m5bmq5t3s6akw6s0379cm7qku87oi8omr95fx9m3xa2npaj3wazhv,056k0ljm11y11ifb1z062fps2wkd3dkd3upd4bz14tcf5asb5s9k69qe6r5t78i27pqj86ty8nsg94ld9l9la1t6ai9laynd,05gc0lt7127u1iox1za12fzg2wu73du03uz64c8o4tm45b1z5sj76a056rfg78rv7q07873v8o2594vc9ljba235aijaayxa,05py0m3012hc1iym1zjg2g922x3k3e3l3v8i4cia4tvi5bbm5ssp6a9t6rp3791m7qa087dp8oc395579ltba2d1aitaaz74,05zv0mcs12r71j8c1zt92gir2xde3ed93vie4crz4u5g5blb5t2o6aji6rz079ba7qju87nc8olu95eu9m32a2mpaj32azgt,055o0lii11x11ie31yz42foi2wj83dj23uo74bxt4tb85ar75s8d69pf6r4o78h77ppg86t78nrh94kq9l8qa1snai8saymv,05fi0lsm126w1io61z8x2fyi2wsw3dsw3uxr4c7h4tkp5b0q5shu69yv6re778qm7pz3872p8o1794ua9lika22aaiipaywk,05ph0m2d12gx1ixy1zix2g892x2w3e2m3v7p4ch44tul5bad5sro6a8k6ro2790f7q8x87cj8ob095449ls9a2c0aisbaz67,05z00mbz12qg1j7l1zsi2ghz2xcj3ecf3vhe4cr14u4a5bkb5t1d6aii6rxq79ac7qin87mf8okq95dz9m20a2lvaj21azg1,054p0lhs11w41idf1yy82fnu2wic3dib3un84bww4ta55aq15s7669o26r3g78fr7poa86rs8nqd94jd9l7oa1rcai7sayll,05ej0lre12601in11z832fxg2ws63drw3ux14c6h4tjw5azo5sgw69xq6rd378pg7pxv871j8nzx94t59lh9a215aiheayve,05o30m1412fh1iwo1zhg2g6z2x1g3e1e3v6a4cg04tt75b9a5sqb6a7g6rmo78z87q7k87ba8o9o952w9lr1a2avair5az53,05xu0mau12p81j6d1zr72ggo2xb73eb23vg24cpn4u315biw5t076ah26rwj798t7qhc87kt8ojd95cc9m0ma2k9aj0oazeh,053e0lg911uv1ibv1ywx2fm92wgy3dgp3uls4bvb4t8p5aom5s5s69ms6r2378el7pmw86qn8nox94i69l66a1q2ai68ayka,05cy0lq3124f1ilp1z6g2fw12wqf3dqe3uv64c4v4ti05ay15sf369w56rbg78ny7pwf87038nyl94rq9lfya1zpaig2ayty,05ms0lzo12e61iv81zg52g5j2x043dzv3v4w4ceb4trr5b7i5sot6a5o6rl778xj7q65879r8o8b951f9lpoa29daipqaz3j,05wc0m9712no1j4p1zpm2gf02x9l3e9f3vef4co04u1b5bhb5sye6afi6rus797e7qfq87jk8ohw95b89lzaa2j8aizeazdf,05220lf411td1iam1yvb2fkv2wf93df83uk24btr4t6z5amx5s4169kz6r0d78cq7pl986ou8nng94gj9l4wa1omai54ayiy,05bw0lor123b1ikb1z5a2fuk2wp63dot3utw4c394tgp5awg5sdq69ul6ra178me7puw86yl8nx294qb9leia1yeaieqaysq,05li0lyi12cw1iu11zet2g482wyn3dyh3v3b4ccx4tq35b645sn66a4b6rjl78w87q4m878g8o6v95069loaa287aiohaz2i,05v70m8912mm1j3t1zol2ge22x8h3e8c3vd74cmr4u015bfw5sx46ae06rti795u7qeh87i08ogn959p9ly1a2hqaiy6azbz,050x0ldr11sd1i9d1yue2fjp2wee3de33uj64bsl4t5z5alr5s2y69jv6qz878bp7pk486nw8nma94fl9l3pa1noai3wayhz,05ao0lnr12231ijb1z422ftl2wny3dnv3usn4c2b4tff5avf5sce69th6r8q78l97ptp86xh8nvz94p99ldia1xeaidsayrr,05kk0lxj12by1it11zdv2g392wxr3dxh3v2g4cbw4tpa5b515smc6a366rip78v17q3n87788o5u94yy9lnaa271ainhaz1b,05u80m7312lm1j2l1znj2gcu2x7f3e753vc54clo4tz05bey5sw36ad66rsh79527qdf87h98ofl958x9lwza2gyaix5azb8,04zv0lcz11ra1i8j1yt82fis2wd53dd33uhv4bri4t4o5ako5s1q69ir6qy478ak7pj286mp8nla94ee9l2pa1mgai2waygr,059o0lml12141ii61z342fsf2wn03dmo3urp4c124teh5au75sbh69sc6r7u78k87pst86wi8nv294oa9lcja1wdaicpayqm,05je0lwb12aq1irr1zcl2g1y2wwf3dw73v124can4tnu5b3u5skw6a226rhd78u27q2g876e8o4t94y79lmca26aaimiaz0j,05t60m6612kf1j1l1zm82gbp2x623e5x3var4ckd4txm5bdj5suq6abo6rr6793k7qc887fu8oej957n9lw1a2fraiw9aza2,04yz0lbr11qa1i771ys52fhd2wbz3dbl3ugn4bq14t3g5aj85s0h69he6qwt789a7phs86ll8nk394df9l1ma1llai1xayfz,058q0llr12021ih71z1v2fr92wlk3dlc3uq14bzm4tcp5asp5s9q69qv6r6578is7pr886v38ntm94mz9lb9a1v8aibmaypo,05ig0lvh129u1iqy1zbo2g102wvd3dv13uzu4c994tmi5b295sji6a0e6rfy78sd7q12874p8o3f94wk9lkza24qail8ayz3,05s10m4v12jf1j0d1zla2gai2x523e4n3v9m4ciz4tw95bc35st86aa86rpl79277qan87ej8ocz956e9luka2ekaiutaz8w,04xk0lao11oy1i661yqv2fgd2wao3dak3uf94bou4t1w5ahu5rys69ft6qv3787l7pg386jv8nih94bq9l04a1jzai0gayef,057b0lk811yq1ifr1z0n2fpx2wkg3dk33up04byc4tbo5arc5s8k69pd6r4u78h67ppt86th8ns594ld9l9sa1tnaia4ayo2,05gx0ltt128a1ip91za32fzc2wtt3dth3uyd4c7u4tl15b0y5si169z46ree78r27pzg873d8o1t94v89ljea23gaijpayxu,05qi0m3l12hv1iz21zjo2g952x3f3e393v804chl4tus5baq5sru6a8t6ro9790o7q9a87cx8obk954p9lt3a2cuaitcaz77,04w50l9011nk1i4j1yph2fep2w9a3d8v3udv4bn74t0l5agc5rxm69ei6qtz786f7pez86iq8nha94ak9kysa1ipahz1ayd2,055u0liu11x81ieb1yz32fog2wit3dij3una4bwt4t9w5apv5s6v69o06r3b78g07pog86se8nqx94kc9l8ka1skai8vaymx,05fn0lsn126y1io21z8r2fy42wsg3ds73uwz4c6f4tjn5azh5sgo69xm6rd678pn7pye87238o0u94u19liha228aiiqaywj,05pg0m2712go1ixk1zig2g7l2x253e1q3v6p4cg34ttf5b985sqg6a7g6rmw78zi7q8187by8oai953y9ls6a2c7aishaz6j,04v80l8811mh1i3l1yo82fdm2w7w3d7p3ucd4bly4sz15af15rw069d46qsf78517pdk86hf8ng1949f9kxta1hsahy8ayca,05540li311wh1idi1yy82fnh2whu3dhf3um94bvk4t8u5aok5s5t69mo6r2978en7pnd86r38npv94j49l7la1rgai80ayly,05ev0lrq12671in41z7x2fx22wrh3dr03uvu4c574tie5ay95sfd69wg6rbu78ok7px287128nzl94t49lhba21faihpayvu,05oj0m1n12fv1ix21zhn2g722x1a3e123v5p4cf84tsb5b885sp96a6a6rlo78y87q6v87an8o9d952m9lr2a2axairgaz5c,04ua0l7511ln1i2m1yni2fcq2w783d6s3ubp4bkz4sya5ady5rv769c06qrj783y7pcl86gd8nf1948d9kwsa1gqahx7ayb7,05420lh011vf1icg1yx72fmg2wgt3dgg3ul74bum4t7p5anl5s4k69ln6r0x78dm7pm286q28nol94i49l6ea1qjai6wayl2,05ds0lqv12541im91z6v2fw82wqf3dq53uuu4c4a4thf5ax95see69vc6rau78na7pw086zp8nyh94rp9lg6a200aiglayug,05nf0m0912er1ivn1zgj2g5n2x053dzn3v4l4cdv4tr85b6y5so76a546rkm78x57q5q879k8o85951j9lpta29taiq6az48,04t00l6111kd1i1h1ym52fbi2w5s3d5i3ua64bjo4swp5acn5rtm69aq6qq0782o7pb586f28ndn94729kvda1fdahvray9u,052n0lfo11u01ib41yvt2fl52wfg3df33uju4bt74t6e5am35s3b69k66qzq78c67pkx86on8nng94gp9l57a1p1ai5layjg,05cd0lp5123m1ikh1z5b2fuf2wow3doe3uta4c2l4tfu5avm5scr69tt6r9878lx7pui86yj8nx394qm9leva1yzaif9aytd,05m00lz112d81iub1zev2g482wyf3dy63v2t4ccd4tpg5b5f5smf6a3j6riw78vi7q44877z8o6p95029loia28faioxaz2v,04rq0l4m11j01hzy1ykp2f9v2w493d3s3u8n4bhy4sv95aax5rs869926qon78137p9t86dl8ncc945o9ku5a1e3ahunay8n,051k0lef11sv1i9r1yuh2fjl2wdx3ddf3ui44brg4t4k5ake5s1g69ik6qxx78ao7pj786n98nlu94ff9l3qa1nwai49ayig,05b60loa122i1ijm1z452ftg2wnk3dn83urs4c184te85au35sb669s76r7p78ka7pt286ww8nvp94p09ldja1xeaidzayrv,05kt0lxn12c41it01zdu2g2x2wxd3dwt3v1o4caw4to65b3u5sl26a1z6rhi78u27q2s876o8o5e94yu9ln8a279ainoaz1q,04qi0l3h11ht1hyu1yjj2f8s2w323d2p3u7c4bgr4str5a9n5rqk697o6qmy77zn7p8586c68nat944d9ksqa1cvahtaay7g,05080ld911rj1i8n1yt82fij2wcr3dce3uh24bqe4t3i5aj95s0e69h96qws78987pi086ls8nko94dz9l2la1miai35ayh2,05a20lmu121c1ii51z2y2frz2wmd3dls3uqn4bzv4td45asu5sa169r16r6h78j57prr86vr8nue94ny9lcaa1weaicsayqy,05jo0lwq12az1is11zcl2g1w2ww13dvq3v0a4c9t4tmt5b2s5sjs6a0w6rg978sx7q1i875f8o4394xj9llxa25yaimfaz0h,04pc0l2b11gp1hxq1yif2f7n2w1y3d1i3u694bfj4ssr5a8g5rpp696k6qm677ym7p7e86b68na0943b9krua1bqahsbay6a,04z80lc311qk1i7f1ys72fha2wbn3db33uft4bp34t275ahz5rz169g46qvj788a7pgv86kz8njm94d89l1ka1lqai23ayga,058y0lm112071ihb1z1t2fr42wl83dkw3upf4byw4tbv5arr5s8t69pw6r5d78i07pqr86uo8ntj94mx9lbga1veaibyaypv,05ir0lvl129z1iqu1zbk2g0n2wv03dug3uza4c8i4tls5b1g5siq69zm6rf878rr7q0j874f8o3994wp9ll7a258ailrayzr,04om0l1i11fu1hwr1yhf2f6k2w0s3d0b3u4y4beb4src5a775ro6695a6qkm77xd7p5w869z8n8m94299kqma1auahraay5i,04ya0lbe11pm1i6p1yr72fgh2wak3da43ueo4bo04t105ags5rxv69et6qud786w7pfq86jk8nih94bu9l0ha1keai13ayf1,05810lku11zc1ig51z0w2fpw2wk83djk3uoc4bxg4tao5aqb5s7i69og6r4078go7ppe86tf8ns694lq9la5a1uaaiapayou,05hl0lum128w1ipx1zai2fzq2wtv3dth3uy04c7f4tkd5b095sh769yb6rdn78qd7pyy87308o1p94v99ljoa23saik9ayyd,04n60l0611eh1hvj1yg52f5e2vzm3cz63u3u4bd44sq85a5w5rn2693w6qjg77vx7p4q868j8n7g940t9kpfa19eahq2ay40,04x00l9u11ob1i541ypv2fev2w973d8k3udb4bmh4szm5afb5rwe69de6qss785i7pe486i78ngw94ak9kyya1j7ahzmaydu,056l0ljo11xv1iex1yze2fon2wio3dib3ums4bw74t955ap15s6169n56r2k78f87pnx86rw8nqo94k59l8oa1soai98ayn9,05g50lt1127e1iob1z8z2fy22wsc3drr3uwi4c5p4tiy5ayl5sfv69wr6rce78ow7pxq871l8o0g94tu9lida22caiixayww,04lt0kyo11d31htz1yep2f3s2vy13cxh3u254bbe4sog5a485rl8692c6qhp77uh7p3186768n5t93zh9knua182ahogay2o,04ve0l8i11mp1i3s1yoa2fdj2w7l3d773ubo4bl14sxz5ads5rut69bu6qrc783z7pct86gr8nfo94949kxra1hpahycayc9,05570lhy11wd1id51yxu2fmt2wh43dgg3ul84buc4t7l5an85s4h69le6r1178do7pmi86qj8npe94iz9l7ia1rmai84aym7,05ez0lrw12651in11z7k2fwp2wqt3dqc3uuw4c4a4th95ax55se469va6ran78nf7pw187068nyx94sk9lh1a219aihqayvw,04ko0kxp11bw1hsx1yde2f2l2vwo3cw63u0q4ba14sn35a2t5rjy690w6qgi77t17p1w865r8n4r93y69kmva16vahnmay1m,04un0l7h11lx1i2p1yne2fca2w6j3d5s3uag4bjj4swo5aca5rtg69af6qpy782p7pbf86fk8ned94829kwja1gsahxaaybj,054b0lhe11vm1icn1yx42fma2wga3dfs3uk74bti4t6d5am85s3669kc6qzr78cj7pl986pd8no794ht9l6ca1qgai70ayl3,05dy0lqx12591im71z6s2fvx2wq33dpj3uu54c3b4tgf5aw15sd969u46r9r78ma7pv786z38ny394rj9lg7a208aigwayuw,04ju0kwo11b41hry1yco2f1p2vvz3cvc3tzz4b954sm65a1v5riu68zv6qf877rz7p0l864r8n3h93x89kloa15zahmgay0q,04ti0l6m11kt1i1w1ymc2fbk2w5l3d553u9l4bix4svt5abm5rsk699l6qp1781o7pag86ef8ndd946v9kvja1flahwaayab,05390lg411ui1ibb1yvz2fky2wf73dei3uj74bsb4t5i5al45s2d69j96qyw78bh7pkb86oa8nn794gq9l5ba1pfai60ayk3,05cz0lpv12471il31z5o2fuq2wow3dob3usw4c264tf65av05sc069t56r8i78lb7ptx86y28nwq94qf9leta1z1aifhaytp,04ig0kvj119r1hqt1yba2f0j2vuk3cu43tym4b7x4skw5a0n5rhq68yp6qea77qv7ozr863n8n2m93w19kkqa14pahleaxzc,04sc0l5511jl1i0c1yl12f9y2w483d3g3u854bh74suc5a9x5rr469826qno780d7p9786dc8nc7945w9kufa1emahv4ay99,05210lez11t71ia41yuk2fjo2wdp3dd63uhm4bqx4t3t5ajp5s0n69hu6qx978a47piu86n18nlv94fj9l43a1o9ai4sayiw,05bn0lok122r1ijo1z452ft82wna3dmq3ura4c0i4tdl5ata5sah69re6r7378jn7psm86wk8nvm94p49ldua1xvaielaysk,04hk0kub118p1hpf1ya22eyy2vt53csd3twz4b624sj559ys5rfv68ww6qcd77p57oxu86218n0u93um9kj4a13hahjzaxya,04r20l4511ic1hzc1yjq2f8u2w2r3d273u6i4bfs4ssm5a8f5rpd696h6qlx77yp7p7i86bm8nal94489kswa1d1ahtpay7s,050q0ldm11ry1i8s1ytc2fia2wce3dbn3ug74bp84t2b5ahv5rz369fz6qvo788b7pha86lb8nkd94dy9l2na1mrai3fayhh,05af0ln9121m1iif1z312frz2wm43dlf3upy4bz44tc25ars5s8r69pu6r5878i27pqq86uz8ntr94nj9lc1a1wdaicvayr5,04fw0ksz11751ho71y8m2ext2vrs3cra3tvp4b4y4shu59xk5rek68vj6qb177no7owj860j8mzk93t49khva11zahiraxws,04pt0l2n11h21hxt1yif2f7b2w1h3d0o3u5a4bea4sre5a6x5ro4694z6qkl77x87p6486a88n97942w9krja1bsahsfay6m,04zi0lch11qr1i7m1ys42fh42wb43dah3uew4bo54t105agu5rxr69ey6quc78777pfw86k48nix94co9l17a1lhai20ayg8,05910lm2120a1ih91z1p2fqt2wks3dk83uoo4bxw4taw5aqk5s7p69oo6r4b78gx7ppv86tu8nsw94md9lb4a1v5aibwaypw,04ex0krq11661hmx1y7m2ewi2vqq3cpx3tuj4b3k4sgm59w75rdb68u96q9s77mj7ovc85zj8myd93s59kgoa10zahhiaxvs,04ok0l1m11fu1hwt1yh92f6e2w0c3czs3u444bde4sq65a5z5rmw69416qjg77wb7p53869b8n89941z9kqma1atahrfay5j,04yd0lba11pi1i6d1yqu2fft2w9w3d973udr4bmu4szx5afj5rwq69dn6qtd78607pf186j28ni794bs9l0ka1koai1eayfe,058c0ll411zg1ig61z0q2fpl2wjq3diz3unk4bwo4t9p5apf5s6g69nj6r3078fu7pok86st8nrn94lh9la0a1ueaiaxayp8,04dz0kr111561hm61y6i2evm2vpi3coy3tta4b2k4sfe59v75rc668t96q8r77li7oud85yh8mxi93r49kfva101ahgtaxuw,04nw0l0s11f51hvw1ygf2f592vzc3cyg3u2z4bbx4soz5a4i5rlq692m6qib77v07p4086848n77940w9kpma19uahqkay4p,04xn0laj11ov1i5o1yq62ff32w923d8b3ucp4blt4syo5aee5rvd69ci6qry784w7pdn86hz8ngu94ao9kz8a1jlai03ayec,05730lk511ya1if91yzn2foq2win3di23umf4bvm4t8i5ao65s5869m76r1t78eh7pnh86ri8nqn94k89l91a1t5ai9xayny,04cy0kpr11451hkv1y5i2euc2voi3cnn3ts84b164se759tp5rat68rp6q7877jy7oss85wz8mvy93pr9kefa0ysahffaxtp,04mk0kzk11dt1hup1yf42f442vy13cxd3u1o4bav4snn5a3e5rka691e6qgs77tn7p2e866o8n5l93ze9ko2a18eahp0ay38,04w30l9211n91i441yoi2fdh2w7f3d6p3ub54bk84sx75act5rtz69aw6qqm78397pca86gb8nfg94909kxua1hyahyraycs,055t0lil11x01idp1yya2fn32wh73dgd3ukw4btx4t6y5amk5s3n69kn6r0678cz7plr86q08nov94io9l78a1rlai84ayme");
+const $=id=>document.getElementById(id);
+const EL={"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土","庚":"金","辛":"金","壬":"水","癸":"水"};
+const DEL={"休":"水","生":"土","傷":"木","杜":"木","景":"火","死":"土","驚":"金","開":"金"};
+const SEL={"天蓬":"水","天任":"土","天沖":"木","天輔":"木","天英":"火","天芮":"土","天禽":"土","天柱":"金","天心":"金"};
+let mode="q", cur=null;
+const QTYPES=Object.entries(QI.TYPES).filter(([k])=>k!=="natal");
+$("qtype").innerHTML=QTYPES.map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+function store(){try{return JSON.parse(localStorage.getItem("qm-history")||"[]")}catch(e){return[]}}
+function saveStore(a){try{localStorage.setItem("qm-history",JSON.stringify(a));return true}catch(e){return false}}
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>el.hidden=true,1800)}
+function pad(n){return String(n).padStart(2,"0")}
+function setNow(){const d=new Date();$("date").value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;$("time").value=`${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function setMode(m){mode=m;$("modeQ").setAttribute("aria-pressed",m==="q");$("modeN").setAttribute("aria-pressed",m==="n");$("qtypeWrap").hidden=m!=="q";$("nowBtn").hidden=m!=="q";syncOpts()}
+function syncOpts(){const t=$("qtype").value;$("targetWrap").hidden=!(mode==="q"&&t==="health");$("genderWrap").hidden=!(mode==="q"&&t==="love")}
+$("modeQ").onclick=()=>setMode("q");$("modeN").onclick=()=>setMode("n");$("qtype").onchange=syncOpts;
+$("aboutBtn").onclick=()=>{const a=$("about");a.hidden=!a.hidden;$("aboutBtn").setAttribute("aria-expanded",!a.hidden)};
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function render(state){
+  const [y,m,d]=state.date.split("-").map(Number), [h,mi]=state.time.split(":").map(Number);
+  let ch; try{ch=QM.chart(y,m,d,h,mi,{zi:state.zi})}catch(e){$("err").textContent=e.message;$("err").hidden=false;return}
+  $("err").hidden=true;
+  const q={type:state.mode==="n"?"natal":state.qtype,target:state.target,gender:state.gender};
+  const R=QI.interpret(ch,q); cur={state,ch,R};
+  $("chartTitle").textContent=state.title||(state.mode==="n"?"出生命盤":"占事盤");
+  const chips=[[`${ch.dayGZ}日 ${ch.hourGZ}時`],[`${ch.term}（${ch.termTime}交）・${ch.yuan}元`],[`${ch.yin?"陰":"陽"}遁${"一二三四五六七八九"[ch.ju-1]}局`,"info"],[`旬首 ${ch.xunHead}`],[`空亡 ${ch.kong}`,"warn"],[`驛馬 ${ch.horse}`],[`值符 ${ch.zhifuStar}`],[`值使 ${ch.zhishiDoor}門`],[`月令 ${ch.monthBranch}（${ch.season}旺）`]];
+  $("meta").innerHTML=`<span class="chip"><b>${y}/${m}/${d} ${pad(h)}:${pad(mi)}</b></span>`+chips.map(([t,k])=>`<span class="chip ${k||""}">${t}</span>`).join("");
+  const hit={}; R.items.forEach(i=>{(hit[i.p]=hit[i.p]||[]).push(i.label)});
+  const order=[4,9,2,3,5,7,8,1,6]; let html="";
+  for(const p of order){const P=ch.palaces[p];
+    if(p===5){html+=`<div class="cell center"><div class="hd" style="justify-content:center">中五</div><div class="stems"><span class="e-${EL[P.ground]}">${P.ground}</span></div><div class="note">地盤（寄坤二）</div></div>`;continue}
+    const badges=[]; if(p===ch.zhifuP)badges.push("值符宮"); if(p===ch.zhishiP)badges.push("值使");
+    html+=`<div class="cell ${hit[p]?"hit":""}">${badges.length?`<span class="badge">${badges.join("・")}</span>`:""}
+      <div class="hd"><span>${P.name}</span><span>${P.dir}・${P.el}</span></div>
+      <div class="row"><span class="god">${P.god}</span><span class="star">${P.stars.map((s,i)=>`<span class="e-${SEL[s]}">${s.slice(1)}</span><small>${P.starState[i]}</small>`).join(" ")}</span></div>
+      <div class="mid"><div class="stems">${P.heaven.length?`<span class="e-${EL[P.heaven[0]]}">${P.heaven[0]}${P.heaven[1]?`<small class="e-${EL[P.heaven[1]]}" style="font-size:.7em">${P.heaven[1]}</small>`:""}</span>`:""}<span class="g e-${EL[P.ground]}">${P.ground}</span></div><span class="door e-${DEL[P.door]}">${P.door}</span></div>
+      <div class="flags">${P.flags.filter(f=>!["門生宮","宮生門"].includes(f.t)).map(f=>`<span class="chip ${f.k}">${f.t}</span>`).join("")}${P.ge.map(g=>`<span class="chip ${g.k}">${g.t}</span>`).join("")}</div>
+      ${hit[p]?`<div class="tags">${[...new Set(hit[p])].map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
+    </div>`}
+  $("grid").innerHTML=html;
+  $("tend").className="tend "+R.tone; $("tend").innerHTML=`<div><div class="lbl">${esc(R.typeName)}｜整體</div><div class="val">${esc(R.tendency)}</div><p class="sum">${esc(R.summary)}</p></div>`;
+  $("items").innerHTML=R.items.map(i=>`<div class="item v-${i.tone}">
+   <div class="ih"><b>${esc(i.meaning)}</b><span class="vtag">${{good:"順",warn:"普通",bad:"較吃力"}[i.tone]}</span></div>
+   <p class="verdict vbox">${esc(i.verdict)}</p>
+   ${i.body?`<p class="note">${esc(i.body)}</p>`:""}
+   ${i.pros.length?`<div class="why"><span class="wl good">有利</span><ul>${i.pros.map(l=>`<li>${esc(l)}</li>`).join("")}</ul></div>`:""}
+   ${i.cons.length?`<div class="why"><span class="wl bad">留意</span><ul>${i.cons.map(l=>`<li>${esc(l)}</li>`).join("")}</ul></div>`:""}
+   <details class="tech"><summary>盤面依據：${esc(i.label)}（${esc(i.tech||"")}）</summary><div class="note">${esc(i.head)}</div></details>
+ </div>`).join("");
+  $("good").innerHTML=R.good.map(g=>`<li>${esc(g)}</li>`).join("")||"<li>無明顯有利訊號</li>";
+  $("bad").innerHTML=R.bad.map(g=>`<li>${esc(g)}</li>`).join("")||"<li>無明顯不利訊號</li>";
+  $("timing").innerHTML=R.timing.map(g=>`<li>${esc(g)}</li>`).join("");
+  $("out").value=QI.friendText(ch,R,state.title);
+}
+function readState(){return{mode,title:$("title").value.trim(),date:$("date").value,time:$("time").value,qtype:$("qtype").value,target:$("target").value,gender:$("gender").value,zi:$("zi").value}}
+function applyState(s){setMode(s.mode||"q");$("title").value=s.title||"";$("date").value=s.date;$("time").value=s.time;$("qtype").value=s.qtype||"general";$("target").value=s.target||"self";$("gender").value=s.gender||"male";$("zi").value=s.zi||"next";syncOpts()}
+$("f").addEventListener("submit",e=>{e.preventDefault();render(readState())});
+$("nowBtn").onclick=()=>{setNow();render(readState())};
+async function copy(t){$("out").value=t;try{await navigator.clipboard.writeText(t);toast("已複製")}catch(e){const o=$("out");o.focus();o.select();toast("請長按或按 Ctrl+C 複製")}}
+$("copyFriend").onclick=()=>{if(cur)copy(QI.friendText(cur.ch,cur.R,cur.state.title))};
+$("copyFull").onclick=()=>{if(cur)copy(QI.fullText(cur.ch,cur.R,cur.state.title))};
+function drawHist(){const a=store();$("hist").innerHTML=a.length?a.map((s,i)=>`<div class="hrow"><div class="t"><b>${esc(s.title||(s.mode==="n"?"出生命盤":"占事盤"))}</b><span>${esc(s.date)} ${esc(s.time)}｜${esc(s.mode==="n"?"出生命盤":(QI.TYPES[s.qtype]||{}).name||"")}</span></div><div class="btns"><button type="button" data-open="${i}">開啟</button><button type="button" data-del="${i}">刪除</button></div></div>`).join(""):`<p class="note">還沒有紀錄。起盤後按「存到我的紀錄」，之後可從這裡再打開。</p>`}
+$("hist").onclick=e=>{const o=e.target.dataset.open,d=e.target.dataset.del,a=store();
+  if(o!==undefined){applyState(a[o]);render(a[o]);window.scrollTo({top:0,behavior:"smooth"})}
+  if(d!==undefined){if(e.target.dataset.armed){a.splice(d,1);saveStore(a);drawHist();toast("已刪除")}else{e.target.dataset.armed="1";e.target.textContent="確定刪除？"}}};
+$("saveBtn").onclick=()=>{if(!cur)return;const a=store();a.unshift(cur.state);toast(saveStore(a.slice(0,100))?"已存到紀錄":"這個瀏覽器無法儲存");drawHist()};
+// 初始：以現在時間起一般問事盤
+setMode("q"); setNow(); $("qtype").value="general"; render(readState()); drawHist();
+</script>

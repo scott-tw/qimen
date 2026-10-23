@@ -1,0 +1,23 @@
+# 系統與編輯器
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Node（genterms2.js 需要 lunar-javascript 時才會安裝）
+node_modules/
+package-lock.json
+
+# 機密與個人資料：一律不進 repo
+.env
+.env.*
+*.key
+*.pem
+*.jks
+*.p12
+credentials*.json
+token*.json
+*keystore*
+_備份_*/
+*.log

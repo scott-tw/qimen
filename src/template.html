@@ -1,0 +1,297 @@
+<title>九宮問事</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap">
+<style>
+/* Layout: 上方起盤表單，中間九宮盤（南在上，傳統方位），下方解讀與分享；寬螢幕時盤與解讀並排 */
+:root{
+  --bg:#eef0ec; --surface:#fafbf8; --sunk:#e3e7e1; --ink:#1a2125; --muted:#5b676c; --line:#cfd6cf;
+  --accent:#23675d; --accent-ink:#ffffff; --accent-soft:#d6e8e3;
+  --good:#2f7a3d; --warn:#9a6a00; --bad:#b03a2e; --info:#2f5f9a;
+  --wood:#2f7d3f; --fire:#c0392b; --earth:#94612a; --metal:#9c7a00; --water:#2a62a8;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111518; --surface:#192024; --sunk:#0d1113; --ink:#e4e9e6; --muted:#97a3a6; --line:#2b3539;
+  --accent:#5db3a3; --accent-ink:#0d1a17; --accent-soft:#1d3632;
+  --good:#6cc27c; --warn:#e2b33f; --bad:#f07a6b; --info:#7fb0ec;
+  --wood:#6cc27c; --fire:#f07a6b; --earth:#d7a463; --metal:#e6c344; --water:#72a8ec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111518; --surface:#192024; --sunk:#0d1113; --ink:#e4e9e6; --muted:#97a3a6; --line:#2b3539;
+  --accent:#5db3a3; --accent-ink:#0d1a17; --accent-soft:#1d3632;
+  --good:#6cc27c; --warn:#e2b33f; --bad:#f07a6b; --info:#7fb0ec;
+  --wood:#6cc27c; --fire:#f07a6b; --earth:#d7a463; --metal:#e6c344; --water:#72a8ec; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-family:var(--serif);font-weight:900;font-size:30px;margin:0;letter-spacing:.06em}
+h1 small{display:block;font-family:var(--sans);font-size:13px;font-weight:400;color:var(--muted);letter-spacing:.02em}
+h2{font-family:var(--serif);font-size:19px;margin:0 0 10px;text-wrap:balance}
+h3{font-size:15px;margin:0 0 6px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+button:hover{filter:brightness(1.05)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);font-weight:700}
+details.adv summary{cursor:pointer;color:var(--muted);font-size:13px}
+.main{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:16px}
+@media (min-width:980px){.main{grid-template-columns:minmax(0,560px) minmax(0,1fr)}}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--ink);white-space:nowrap}
+.chip b{font-weight:700}
+.chip.good{color:var(--good)} .chip.bad{color:var(--bad)} .chip.warn{color:var(--warn)} .chip.info{color:var(--info)}
+.board{position:relative;padding:22px 22px}
+.dirlab{position:absolute;font-size:12px;color:var(--muted);font-family:var(--serif)}
+.dirlab.n{bottom:2px;left:50%;transform:translateX(-50%)} .dirlab.s{top:2px;left:50%;transform:translateX(-50%)}
+.dirlab.e{left:2px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl} .dirlab.w{right:2px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl}
+.grid9{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.cell{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 8px 8px;min-height:150px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cell.center{background:var(--sunk);align-items:center;justify-content:center;text-align:center}
+.cell.hit{border:2px solid var(--accent);padding:6px 7px 7px}
+.cell .hd{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);gap:4px}
+.cell .row{display:flex;justify-content:space-between;align-items:baseline;gap:4px;font-family:var(--serif)}
+.cell .god{font-size:14px;font-weight:700}
+.cell .star{font-size:13.5px;text-align:right}
+.cell .star small{font-size:10.5px;color:var(--muted);margin-left:2px}
+.cell .mid{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:2px 0}
+.stems{display:flex;flex-direction:column;font-family:var(--serif);font-size:17px;line-height:1.15}
+.stems .g{opacity:.9}
+.door{font-family:var(--serif);font-weight:900;font-size:34px;line-height:1}
+.flags{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto}
+.flags .chip{font-size:10.5px;padding:0 6px}
+.tags{display:flex;flex-wrap:wrap;gap:3px}
+.tag{font-size:10.5px;padding:0 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700}
+.badge{position:absolute;top:-9px;right:8px;font-size:10.5px;padding:0 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.e-木{color:var(--wood)} .e-火{color:var(--fire)} .e-土{color:var(--earth)} .e-金{color:var(--metal)} .e-水{color:var(--water)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.tend{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--r);background:var(--sunk);margin-bottom:12px}
+.tend .lbl{font-size:12px;color:var(--muted)}
+.tend .val{font-family:var(--serif);font-size:20px;font-weight:700}
+.tend.good .val{color:var(--good)} .tend.warn .val{color:var(--warn)} .tend.bad .val{color:var(--bad)} .tend.info .val{color:var(--info)}
+.items{display:grid;gap:10px}
+.item{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;background:var(--surface)}
+.item .ih{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.item .ih b{font-family:var(--serif);font-size:16px}
+.item .ih span{font-size:12.5px;color:var(--muted)}
+.item ul{margin:2px 0 0;padding-left:18px}
+.item .verdict{margin:4px 0;font-weight:500}
+.item .vtag{font-size:12px;padding:0 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.item.v-good .vtag{color:var(--good)} .item.v-bad .vtag{color:var(--bad)} .item.v-warn .vtag{color:var(--warn)}
+.item.v-good{border-left:4px solid var(--good)} .item.v-warn{border-left:4px solid var(--warn)} .item.v-bad{border-left:4px solid var(--bad)}
+.why{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;margin-top:6px;align-items:start}
+.wl{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sunk);margin-top:2px}
+.wl.good{color:var(--good)} .wl.bad{color:var(--bad)}
+.vbox{margin:8px 0 0;padding:8px 10px;background:var(--accent-soft);border-radius:8px}
+.tech{margin-top:6px} .tech summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+.tend .sum{margin:6px 0 0;font-size:14.5px;max-width:68ch}
+.item li{margin:1px 0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+.cols ul{margin:4px 0 0;padding-left:18px}
+.box{border-radius:var(--r);padding:10px 12px;background:var(--sunk)}
+.box.good h3{color:var(--good)} .box.bad h3{color:var(--bad)}
+.note{font-size:12.5px;color:var(--muted)}
+.disc{margin-top:14px;padding:10px 12px;border-left:3px solid var(--warn);background:var(--sunk);font-size:13px;border-radius:0 8px 8px 0}
+.hist{display:grid;gap:6px;margin-top:8px}
+.hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);flex-wrap:wrap}
+.hrow .t{min-width:0;flex:1}
+.hrow .t b{display:block;font-size:14px;overflow-wrap:anywhere}
+.hrow .t span{font-size:12px;color:var(--muted)}
+textarea.out{min-height:200px;font-size:13px;line-height:1.55;white-space:pre-wrap;margin-top:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:20}
+.about{font-size:14px}
+.about p{margin:6px 0;max-width:68ch}
+.about table{border-collapse:collapse;font-size:13px;margin-top:6px}
+.about td,.about th{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+.tblwrap{overflow-x:auto}
+.err{color:var(--bad);font-size:14px}
+@media (max-width:520px){
+  .board{padding:18px 15px}
+  .dirlab.e{left:0}.dirlab.w{right:0}
+  .cell{min-height:132px;padding:5px 5px 6px}
+  .cell.hit{padding:4px 4px 5px}
+  .door{font-size:26px}
+  .stems{font-size:14px}
+  .cell .god{font-size:12.5px}
+  .cell .star{font-size:11.5px}
+  .cell .hd{font-size:10.5px}
+  h1{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>九宮問事<small>奇門遁甲排盤・白話解讀｜時家奇門・轉盤・拆補法</small></h1>
+    <div class="btns"><button id="aboutBtn" aria-expanded="false" aria-controls="about">使用說明</button></div>
+  </header>
+
+  <section class="panel about" id="about" hidden>
+    <h2>怎麼用</h2>
+    <p><b>占事盤</b>：心裡有一件具體的事想問時，用「提問當下」的時間起盤，一次只問一件事。例如「明年退休後到私校任教務主任，是否適合？」</p>
+    <p><b>出生命盤</b>：用出生的年月日時起盤，看性格與一生傾向。</p>
+    <p>時間請以<b>台灣時間</b>輸入。23:00 之後的子時預設算作隔天（可在「進階」更改）。</p>
+    <h3 style="margin-top:10px">盤上符號</h3>
+    <div class="tblwrap"><table>
+      <tr><th>層次</th><th>內容</th></tr>
+      <tr><td>神（左上）</td><td>值符、騰蛇、太陰、六合、白虎（陽遁為勾陳）、玄武（陽遁為朱雀）、九地、九天</td></tr>
+      <tr><td>星（右上）</td><td>九星，括號內為月令強弱：旺、相、休、囚、廢</td></tr>
+      <tr><td>門（大字）</td><td>休、生、傷、杜、景、死、驚、開</td></tr>
+      <tr><td>干（左側）</td><td>上為天盤干、下為地盤干</td></tr>
+      <tr><td>標記</td><td>門迫（門剋宮）、宮迫（宮剋門）、入墓、擊刑、空亡、馬星、吉凶格</td></tr>
+    </table></div>
+    <p class="note">排法：時家奇門轉盤，拆補法定局（以起盤當下所在節氣定陰陽遁與局數，節氣精確到分鐘；以符頭地支定上中下元）。排盤結果已與獨立的開源排盤程式交叉比對 220 組隨機時間，一致。月令強弱採季節五行，四季月於「立」節前 18 天為土旺。不同流派在定局、寄宮與用神取法上會有差異。</p>
+  </section>
+
+  <section class="panel" style="margin-top:12px">
+    <form id="f" class="form" autocomplete="off">
+      <label style="grid-column:1/-1">盤的用途
+        <span class="seg" role="group" aria-label="盤的用途">
+          <button type="button" id="modeQ" aria-pressed="true">占事盤（問一件事）</button>
+          <button type="button" id="modeN" aria-pressed="false">出生命盤</button>
+        </span>
+      </label>
+      <label for="title">標題（給自己看的名稱）<input id="title" placeholder="例：問退休後轉職"></label>
+      <label for="date">日期<input id="date" type="date" required></label>
+      <label for="time">時間（台灣時間）<input id="time" type="time" required></label>
+      <label for="qtype" id="qtypeWrap">問事類別<select id="qtype"></select></label>
+      <label for="target" id="targetWrap" hidden>病人是誰
+        <select id="target"><option value="self">本人</option><option value="oldman">男性長輩（父親等）</option><option value="oldwoman">女性長輩（母親等）</option><option value="other">其他人</option></select></label>
+      <label for="gender" id="genderWrap" hidden>問者性別
+        <select id="gender"><option value="male">男</option><option value="female">女</option></select></label>
+      <div class="btns" style="grid-column:1/-1">
+        <button type="submit" class="primary">起盤</button>
+        <button type="button" id="nowBtn">用現在時間起盤</button>
+        <details class="adv"><summary>進階</summary>
+          <label for="zi" style="margin-top:6px">23:00–24:00 的子時
+            <select id="zi"><option value="next">算作隔天（預設）</option><option value="same">算作當天</option></select></label>
+        </details>
+      </div>
+    </form>
+    <p id="err" class="err" hidden></p>
+  </section>
+
+  <div class="main">
+    <section class="panel">
+      <h2 id="chartTitle">盤面</h2>
+      <div class="meta" id="meta"></div>
+      <div class="board">
+        <span class="dirlab s">南</span><span class="dirlab n">北</span><span class="dirlab e">東</span><span class="dirlab w">西</span>
+        <div class="grid9" id="grid"></div>
+      </div>
+      <div class="legend">
+        <span class="e-木">● 木</span><span class="e-火">● 火</span><span class="e-土">● 土</span><span class="e-金">● 金</span><span class="e-水">● 水</span>
+        <span>框線：本次問事的用神宮位</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>解讀</h2>
+      <div id="tend" class="tend"></div>
+      <div class="items" id="items"></div>
+      <div class="cols">
+        <div class="box good"><h3>順的地方（全部整理）</h3><ul id="good"></ul></div>
+        <div class="box bad"><h3>要留意的地方（全部整理）</h3><ul id="bad"></ul></div>
+      </div>
+      <div class="box" style="margin-top:10px"><h3>時間參考（傳統應期）</h3><ul id="timing" style="margin:4px 0 0;padding-left:18px"></ul></div>
+      <div class="disc">奇門遁甲屬傳統術數，沒有科學證據支持其預測力。解讀僅供參考，不能取代醫療、法律、財務等專業判斷。</div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>分享與紀錄</h2>
+    <div class="btns">
+      <button type="button" id="copyFriend" class="primary">複製給親友的簡易說明</button>
+      <button type="button" id="copyFull">複製完整解讀</button>
+      <button type="button" id="saveBtn">存到我的紀錄</button>
+    </div>
+    <p class="note">親友版會淡化凶神凶門等字眼，只保留整體傾向與時間參考。要分享盤面，可直接截圖。</p>
+    <textarea id="out" class="out" aria-label="說明文字" readonly></textarea>
+    <h3 style="margin-top:14px">我的紀錄 <span class="note">（只存在這台裝置的瀏覽器裡）</span></h3>
+    <div class="hist" id="hist"></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>/*ENGINE*/</script>
+<script>/*INTERP*/</script>
+<script>
+QM.setTerms("/*TERMS*/");
+const $=id=>document.getElementById(id);
+const EL={"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土","庚":"金","辛":"金","壬":"水","癸":"水"};
+const DEL={"休":"水","生":"土","傷":"木","杜":"木","景":"火","死":"土","驚":"金","開":"金"};
+const SEL={"天蓬":"水","天任":"土","天沖":"木","天輔":"木","天英":"火","天芮":"土","天禽":"土","天柱":"金","天心":"金"};
+let mode="q", cur=null;
+const QTYPES=Object.entries(QI.TYPES).filter(([k])=>k!=="natal");
+$("qtype").innerHTML=QTYPES.map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+function store(){try{return JSON.parse(localStorage.getItem("qm-history")||"[]")}catch(e){return[]}}
+function saveStore(a){try{localStorage.setItem("qm-history",JSON.stringify(a));return true}catch(e){return false}}
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>el.hidden=true,1800)}
+function pad(n){return String(n).padStart(2,"0")}
+function setNow(){const d=new Date();$("date").value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;$("time").value=`${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function setMode(m){mode=m;$("modeQ").setAttribute("aria-pressed",m==="q");$("modeN").setAttribute("aria-pressed",m==="n");$("qtypeWrap").hidden=m!=="q";$("nowBtn").hidden=m!=="q";syncOpts()}
+function syncOpts(){const t=$("qtype").value;$("targetWrap").hidden=!(mode==="q"&&t==="health");$("genderWrap").hidden=!(mode==="q"&&t==="love")}
+$("modeQ").onclick=()=>setMode("q");$("modeN").onclick=()=>setMode("n");$("qtype").onchange=syncOpts;
+$("aboutBtn").onclick=()=>{const a=$("about");a.hidden=!a.hidden;$("aboutBtn").setAttribute("aria-expanded",!a.hidden)};
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function render(state){
+  const [y,m,d]=state.date.split("-").map(Number), [h,mi]=state.time.split(":").map(Number);
+  let ch; try{ch=QM.chart(y,m,d,h,mi,{zi:state.zi})}catch(e){$("err").textContent=e.message;$("err").hidden=false;return}
+  $("err").hidden=true;
+  const q={type:state.mode==="n"?"natal":state.qtype,target:state.target,gender:state.gender};
+  const R=QI.interpret(ch,q); cur={state,ch,R};
+  $("chartTitle").textContent=state.title||(state.mode==="n"?"出生命盤":"占事盤");
+  const chips=[[`${ch.dayGZ}日 ${ch.hourGZ}時`],[`${ch.term}（${ch.termTime}交）・${ch.yuan}元`],[`${ch.yin?"陰":"陽"}遁${"一二三四五六七八九"[ch.ju-1]}局`,"info"],[`旬首 ${ch.xunHead}`],[`空亡 ${ch.kong}`,"warn"],[`驛馬 ${ch.horse}`],[`值符 ${ch.zhifuStar}`],[`值使 ${ch.zhishiDoor}門`],[`月令 ${ch.monthBranch}（${ch.season}旺）`]];
+  $("meta").innerHTML=`<span class="chip"><b>${y}/${m}/${d} ${pad(h)}:${pad(mi)}</b></span>`+chips.map(([t,k])=>`<span class="chip ${k||""}">${t}</span>`).join("");
+  const hit={}; R.items.forEach(i=>{(hit[i.p]=hit[i.p]||[]).push(i.label)});
+  const order=[4,9,2,3,5,7,8,1,6]; let html="";
+  for(const p of order){const P=ch.palaces[p];
+    if(p===5){html+=`<div class="cell center"><div class="hd" style="justify-content:center">中五</div><div class="stems"><span class="e-${EL[P.ground]}">${P.ground}</span></div><div class="note">地盤（寄坤二）</div></div>`;continue}
+    const badges=[]; if(p===ch.zhifuP)badges.push("值符宮"); if(p===ch.zhishiP)badges.push("值使");
+    html+=`<div class="cell ${hit[p]?"hit":""}">${badges.length?`<span class="badge">${badges.join("・")}</span>`:""}
+      <div class="hd"><span>${P.name}</span><span>${P.dir}・${P.el}</span></div>
+      <div class="row"><span class="god">${P.god}</span><span class="star">${P.stars.map((s,i)=>`<span class="e-${SEL[s]}">${s.slice(1)}</span><small>${P.starState[i]}</small>`).join(" ")}</span></div>
+      <div class="mid"><div class="stems">${P.heaven.length?`<span class="e-${EL[P.heaven[0]]}">${P.heaven[0]}${P.heaven[1]?`<small class="e-${EL[P.heaven[1]]}" style="font-size:.7em">${P.heaven[1]}</small>`:""}</span>`:""}<span class="g e-${EL[P.ground]}">${P.ground}</span></div><span class="door e-${DEL[P.door]}">${P.door}</span></div>
+      <div class="flags">${P.flags.filter(f=>!f.t.includes("生")).map(f=>`<span class="chip ${f.k}">${f.t}</span>`).join("")}${P.ge.map(g=>`<span class="chip ${g.k}">${g.t}</span>`).join("")}</div>
+      ${hit[p]?`<div class="tags">${[...new Set(hit[p])].map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
+    </div>`}
+  $("grid").innerHTML=html;
+  $("tend").className="tend "+R.tone; $("tend").innerHTML=`<div><div class="lbl">${esc(R.typeName)}｜整體</div><div class="val">${esc(R.tendency)}</div><p class="sum">${esc(R.summary)}</p></div>`;
+  $("items").innerHTML=R.items.map(i=>`<div class="item v-${i.tone}">
+   <div class="ih"><b>${esc(i.meaning)}</b><span class="vtag">${{good:"順",warn:"普通",bad:"較吃力"}[i.tone]}</span></div>
+   <p class="verdict vbox">${esc(i.verdict)}</p>
+   ${i.body?`<p class="note">${esc(i.body)}</p>`:""}
+   ${i.pros.length?`<div class="why"><span class="wl good">有利</span><ul>${i.pros.map(l=>`<li>${esc(l)}</li>`).join("")}</ul></div>`:""}
+   ${i.cons.length?`<div class="why"><span class="wl bad">留意</span><ul>${i.cons.map(l=>`<li>${esc(l)}</li>`).join("")}</ul></div>`:""}
+   <details class="tech"><summary>盤面依據：${esc(i.label)}（${esc(i.tech||"")}）</summary><div class="note">${esc(i.head)}</div></details>
+ </div>`).join("");
+  $("good").innerHTML=R.good.map(g=>`<li>${esc(g)}</li>`).join("")||"<li>無明顯有利訊號</li>";
+  $("bad").innerHTML=R.bad.map(g=>`<li>${esc(g)}</li>`).join("")||"<li>無明顯不利訊號</li>";
+  $("timing").innerHTML=R.timing.map(g=>`<li>${esc(g)}</li>`).join("");
+  $("out").value=QI.friendText(ch,R,state.title);
+}
+function readState(){return{mode,title:$("title").value.trim(),date:$("date").value,time:$("time").value,qtype:$("qtype").value,target:$("target").value,gender:$("gender").value,zi:$("zi").value}}
+function applyState(s){setMode(s.mode||"q");$("title").value=s.title||"";$("date").value=s.date;$("time").value=s.time;$("qtype").value=s.qtype||"general";$("target").value=s.target||"self";$("gender").value=s.gender||"male";$("zi").value=s.zi||"next";syncOpts()}
+$("f").addEventListener("submit",e=>{e.preventDefault();render(readState())});
+$("nowBtn").onclick=()=>{setNow();render(readState())};
+async function copy(t){$("out").value=t;try{await navigator.clipboard.writeText(t);toast("已複製")}catch(e){const o=$("out");o.focus();o.select();toast("請長按或按 Ctrl+C 複製")}}
+$("copyFriend").onclick=()=>{if(cur)copy(QI.friendText(cur.ch,cur.R,cur.state.title))};
+$("copyFull").onclick=()=>{if(cur)copy(QI.fullText(cur.ch,cur.R,cur.state.title))};
+function drawHist(){const a=store();$("hist").innerHTML=a.length?a.map((s,i)=>`<div class="hrow"><div class="t"><b>${esc(s.title||(s.mode==="n"?"出生命盤":"占事盤"))}</b><span>${esc(s.date)} ${esc(s.time)}｜${esc(s.mode==="n"?"出生命盤":(QI.TYPES[s.qtype]||{}).name||"")}</span></div><div class="btns"><button type="button" data-open="${i}">開啟</button><button type="button" data-del="${i}">刪除</button></div></div>`).join(""):`<p class="note">還沒有紀錄。起盤後按「存到我的紀錄」，之後可從這裡再打開。</p>`}
+$("hist").onclick=e=>{const o=e.target.dataset.open,d=e.target.dataset.del,a=store();
+  if(o!==undefined){applyState(a[o]);render(a[o]);window.scrollTo({top:0,behavior:"smooth"})}
+  if(d!==undefined){if(e.target.dataset.armed){a.splice(d,1);saveStore(a);drawHist();toast("已刪除")}else{e.target.dataset.armed="1";e.target.textContent="確定刪除？"}}};
+$("saveBtn").onclick=()=>{if(!cur)return;const a=store();a.unshift(cur.state);toast(saveStore(a.slice(0,100))?"已存到紀錄":"這個瀏覽器無法儲存");drawHist()};
+// 初始：以現在時間起一般問事盤
+setMode("q"); setNow(); $("qtype").value="general"; render(readState()); drawHist();
+</script>
